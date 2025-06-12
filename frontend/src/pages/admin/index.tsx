@@ -237,11 +237,13 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  checkin.action.toLowerCase().includes('checkin') || checkin.action.toLowerCase().includes('check-in')
+                                  checkin.action && (checkin.action.toLowerCase().includes('checkin') || checkin.action.toLowerCase().includes('check-in'))
                                     ? 'bg-green-100 text-green-800' 
                                     : 'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {checkin.action.toLowerCase().includes('checkin') || checkin.action.toLowerCase().includes('check-in') ? 'Active' : 'Completed'}
+                                  {checkin.action && (checkin.action.toLowerCase().includes('checkin') || checkin.action.toLowerCase().includes('check-in')) 
+                                    ? 'Active' 
+                                    : 'Completed'}
                                 </span>
                               </td>
                             </tr>
