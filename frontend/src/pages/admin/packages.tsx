@@ -1,56 +1,183 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation } from '@apollo/client'
 import { QrCodeIcon } from '@heroicons/react/24/outline'
 import Navigation from '../../components/Navigation'
 import ProtectedRoute from '../../components/ProtectedRoute'
+import { 
+  GET_ALL_SUBSCRIPTION_PACKAGES,
+  CREATE_SUBSCRIPTION_PACKAGE,
+  UPDATE_SUBSCRIPTION_PACKAGE,
+  TOGGLE_SUBSCRIPTION_PACKAGE_STATUS,
+  DELETE_SUBSCRIPTION_PACKAGE
+} from '../../lib/graphql/packages'
+import { GET_CLUBS } from '../../lib/graphql/dashboard'
+
+interface SubscriptionPackage {
+  id: string;
+  name: string;
+  type: string;
+  price: number;
+  discountPrice?: number;
+  duration: number;
+  description?: string;
+  features: string[];
+  maxCheckins?: number;
+  isActive: boolean;
+  isPopular: boolean;
+  sortOrder: number;
+  club: {
+    id: string;
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Club {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
 
 export default function AdminSubscriptionPackages() {
-  const packages = [
-    {
-      id: 1,
-      name: 'Gói Cơ Bản',
-      type: 'Hàng tháng',
-      price: '249,000₫',
-      originalPrice: '299,000₫',
-      subscribers: 125,
-      status: 'active',
-      icon: 'fas fa-user',
-      gradient: 'from-blue-500 to-green-600'
-    },
-    {
-      id: 2,
-      name: 'Gói Tiêu Chuẩn',
-      type: 'Hàng tháng',
-      price: '399,000₫',
-      originalPrice: '499,000₫',
-      subscribers: 89,
-      status: 'active',
-      icon: 'fas fa-star',
-      gradient: 'from-green-500 to-blue-600'
-    },
-    {
-      id: 3,
-      name: 'Gói Premium',
-      type: 'Hàng tháng',
-      price: '699,000₫',
-      originalPrice: '799,000₫',
-      subscribers: 42,
-      status: 'active',
-      icon: 'fas fa-crown',
-      gradient: 'from-purple-500 to-pink-600'
-    },
-    {
-      id: 4,
-      name: 'Gói Hàng Tuần',
-      type: 'Hàng tuần',
-      price: '149,000₫',
-      originalPrice: null,
-      subscribers: 23,
-      status: 'paused',
-      icon: 'fas fa-calendar-week',
-      gradient: 'from-gray-500 to-gray-600'
+  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [filteredPackages, setFilteredPackages] = useState<SubscriptionPackage[]>([]);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<SubscriptionPackage | null>(null);
+
+  const { data: packagesData, loading: packagesLoading, error: packagesError, refetch: refetchPackages } = useQuery(GET_ALL_SUBSCRIPTION_PACKAGES, {
+    variables: { includeInactive: true }
+  });
+
+  const { data: clubsData } = useQuery(GET_CLUBS);
+
+  const [createPackage, { loading: createLoading }] = useMutation(CREATE_SUBSCRIPTION_PACKAGE);
+  const [updatePackage, { loading: updateLoading }] = useMutation(UPDATE_SUBSCRIPTION_PACKAGE);
+  const [togglePackageStatus] = useMutation(TOGGLE_SUBSCRIPTION_PACKAGE_STATUS);
+  const [deletePackage] = useMutation(DELETE_SUBSCRIPTION_PACKAGE);
+
+  useEffect(() => {
+    if (packagesData?.allSubscriptionPackages) {
+      try {
+        const parsedPackages = JSON.parse(packagesData.allSubscriptionPackages);
+        setPackages(parsedPackages);
+      } catch (e) {
+        console.error('Error parsing packages data:', e);
+        setPackages([]);
+      }
     }
-  ]
+  }, [packagesData]);
+
+  useEffect(() => {
+    if (clubsData?.clubs) {
+      setClubs(clubsData.clubs.filter((club: Club) => club.isActive));
+    }
+  }, [clubsData]);
+
+  useEffect(() => {
+    let filtered = packages;
+
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(pkg =>
+        filterStatus === 'active' ? pkg.isActive : !pkg.isActive
+      );
+    }
+
+    // Filter by type
+    if (filterType !== 'all') {
+      filtered = filtered.filter(pkg => pkg.type === filterType);
+    }
+
+    setFilteredPackages(filtered);
+  }, [packages, filterStatus, filterType]);
+
+  const handleToggleStatus = async (packageId: string) => {
+    try {
+      await togglePackageStatus({ variables: { id: packageId } });
+      refetchPackages();
+    } catch (error) {
+      console.error('Error toggling package status:', error);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeLabels: { [key: string]: string } = {
+      'MONTHLY': 'Hàng tháng',
+      'WEEKLY': 'Hàng tuần',
+      'YEARLY': 'Hàng năm',
+      'DAILY': 'Hàng ngày',
+      'EVENT_SPECIFIC': 'Theo sự kiện'
+    };
+    return typeLabels[type] || type;
+  };
+
+  const stats = {
+    totalPackages: packages.length,
+    activePackages: packages.filter(pkg => pkg.isActive).length,
+    totalSubscriptions: 0, // This would need to come from another API
+    monthlyRevenue: 0 // This would need to come from another API
+  };
+
+  if (packagesLoading) {
+    return (
+      <ProtectedRoute requireAdmin={true}>
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
+          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-500">Loading packages...</p>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (packagesError) {
+    return (
+      <ProtectedRoute requireAdmin={true}>
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
+          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Error loading packages
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{packagesError.message}</p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => refetchPackages()}
+                      className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute requireAdmin={true}>
@@ -76,11 +203,19 @@ export default function AdminSubscriptionPackages() {
                 </p>
               </div>
               <div className="mt-4 flex md:mt-0 md:ml-4">
-                <button type="button" className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                  <i className="fas fa-download mr-2"></i>
-                  Xuất Excel
+                <button 
+                  onClick={() => refetchPackages()}
+                  type="button" 
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <i className="fas fa-refresh mr-2"></i>
+                  Refresh
                 </button>
-                <button type="button" className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  type="button" 
+                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
                   <i className="fas fa-plus mr-2"></i>
                   Tạo Gói Mới
                 </button>
@@ -98,7 +233,7 @@ export default function AdminSubscriptionPackages() {
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">Tổng gói cước</dt>
-                        <dd className="text-lg font-medium text-gray-900">24</dd>
+                        <dd className="text-lg font-medium text-gray-900">{stats.totalPackages}</dd>
                       </dl>
                     </div>
                   </div>
@@ -114,7 +249,7 @@ export default function AdminSubscriptionPackages() {
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">Đang hoạt động</dt>
-                        <dd className="text-lg font-medium text-gray-900">18</dd>
+                        <dd className="text-lg font-medium text-gray-900">{stats.activePackages}</dd>
                       </dl>
                     </div>
                   </div>
@@ -160,88 +295,150 @@ export default function AdminSubscriptionPackages() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">Danh sách gói cước</h3>
                   <div className="flex items-center space-x-2">
-                    <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-                      <option>Tất cả trạng thái</option>
-                      <option>Đang hoạt động</option>
-                      <option>Tạm dừng</option>
+                    <select 
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+                    >
+                      <option value="all">Tất cả trạng thái</option>
+                      <option value="active">Đang hoạt động</option>
+                      <option value="inactive">Tạm dừng</option>
                     </select>
-                    <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-                      <option>Tất cả loại</option>
-                      <option>Hàng tháng</option>
-                      <option>Hàng tuần</option>
-                      <option>Hàng năm</option>
+                    <select 
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                    >
+                      <option value="all">Tất cả loại</option>
+                      <option value="MONTHLY">Hàng tháng</option>
+                      <option value="WEEKLY">Hàng tuần</option>
+                      <option value="YEARLY">Hàng năm</option>
+                      <option value="DAILY">Hàng ngày</option>
+                      <option value="EVENT_SPECIFIC">Theo sự kiện</option>
                     </select>
                   </div>
                 </div>
 
                 <ul className="divide-y divide-gray-200">
-                  {packages.map((pkg) => (
-                    <li key={pkg.id}>
-                      <div className="px-6 py-6 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <div className={`w-12 h-12 bg-gradient-to-r ${pkg.gradient} rounded-lg flex items-center justify-center`}>
-                              <i className={`${pkg.icon} text-white text-lg`}></i>
-                            </div>
-                          </div>
-                          <div className="ml-4">
+                  {filteredPackages.length === 0 ? (
+                    <div className="text-center py-12">
+                      <i className="fas fa-box text-gray-300 text-6xl mb-4"></i>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No packages found</h3>
+                      <p className="text-gray-500">
+                        {packages.length === 0 
+                          ? "You haven't created any packages yet." 
+                          : "No packages match your current filters."
+                        }
+                      </p>
+                      {packages.length === 0 && (
+                        <button 
+                          onClick={() => setShowCreateModal(true)}
+                          className="mt-4 bg-blue-600 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
+                        >
+                          <i className="fas fa-plus mr-2"></i>Create Your First Package
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    filteredPackages.map((pkg) => {
+                      const getPackageIcon = (type: string) => {
+                        const iconMap: { [key: string]: string } = {
+                          'MONTHLY': 'fas fa-calendar-alt',
+                          'WEEKLY': 'fas fa-calendar-week',
+                          'YEARLY': 'fas fa-calendar',
+                          'DAILY': 'fas fa-calendar-day',
+                          'EVENT_SPECIFIC': 'fas fa-ticket-alt'
+                        };
+                        return iconMap[type] || 'fas fa-box';
+                      };
+
+                      const getPackageGradient = (type: string) => {
+                        const gradientMap: { [key: string]: string } = {
+                          'MONTHLY': 'from-blue-500 to-green-600',
+                          'WEEKLY': 'from-green-500 to-blue-600',
+                          'YEARLY': 'from-purple-500 to-pink-600',
+                          'DAILY': 'from-yellow-500 to-orange-600',
+                          'EVENT_SPECIFIC': 'from-red-500 to-purple-600'
+                        };
+                        return gradientMap[type] || 'from-gray-500 to-gray-600';
+                      };
+
+                      return (
+                        <li key={pkg.id}>
+                          <div className="px-6 py-6 flex items-center justify-between">
                             <div className="flex items-center">
-                              <h4 className="text-lg font-medium text-gray-900">{pkg.name}</h4>
-                              <span className={`ml-3 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                pkg.status === 'active' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {pkg.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                              </span>
+                              <div className="flex-shrink-0">
+                                <div className={`w-12 h-12 bg-gradient-to-r ${getPackageGradient(pkg.type)} rounded-lg flex items-center justify-center`}>
+                                  <i className={`${getPackageIcon(pkg.type)} text-white text-lg`}></i>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="flex items-center">
+                                  <h4 className="text-lg font-medium text-gray-900">{pkg.name}</h4>
+                                  <span className={`ml-3 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    pkg.isActive 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {pkg.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                                  </span>
+                                  {pkg.isPopular && (
+                                    <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                      Phổ biến
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  {getTypeLabel(pkg.type)} • {pkg.club.name}
+                                  {pkg.maxCheckins && ` • Tối đa ${pkg.maxCheckins} lần check-in`}
+                                </p>
+                                {pkg.description && (
+                                  <p className="text-sm text-gray-400 mt-1">{pkg.description}</p>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-500">{pkg.type} • {pkg.subscribers} người đăng ký</p>
+                            <div className="flex items-center space-x-8">
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-gray-900">{formatPrice(pkg.price)}</div>
+                                {pkg.discountPrice && pkg.discountPrice !== pkg.price && (
+                                  <div className="text-sm text-gray-500 line-through">{formatPrice(pkg.discountPrice)}</div>
+                                )}
+                              </div>
+                              <div className="flex space-x-2">
+                                <button 
+                                  onClick={() => setEditingPackage(pkg)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  title="Edit package"
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </button>
+                                <button 
+                                  onClick={() => handleToggleStatus(pkg.id)}
+                                  className={`${pkg.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                                  title={pkg.isActive ? 'Pause package' : 'Activate package'}
+                                >
+                                  <i className={`fas ${pkg.isActive ? 'fa-pause' : 'fa-play'}`}></i>
+                                </button>
+                                <button className="text-red-600 hover:text-red-900" title="Delete package">
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-8">
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-gray-900">{pkg.price}</div>
-                            {pkg.originalPrice && (
-                              <div className="text-sm text-gray-500 line-through">{pkg.originalPrice}</div>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-green-600 hover:text-green-900">
-                              <i className="fas fa-eye"></i>
-                            </button>
-                            <button className="text-red-600 hover:text-red-900">
-                              <i className="fas fa-pause"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
+                        </li>
+                      );
+                    })
+                  )}
                 </ul>
 
                 {/* Pagination */}
                 <div className="mt-6 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-700">
-                      Hiển thị <span className="font-medium">1</span> đến <span className="font-medium">4</span> của{' '}
-                      <span className="font-medium">24</span> kết quả
+                      Hiển thị <span className="font-medium">{Math.min(filteredPackages.length, 1)}</span> đến{' '}
+                      <span className="font-medium">{filteredPackages.length}</span> của{' '}
+                      <span className="font-medium">{packages.length}</span> kết quả
                     </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <i className="fas fa-chevron-left"></i>
-                      </a>
-                      <a href="#" className="bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
-                      <a href="#" className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">2</a>
-                      <a href="#" className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">3</a>
-                      <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                        <i className="fas fa-chevron-right"></i>
-                      </a>
-                    </nav>
                   </div>
                 </div>
               </div>
