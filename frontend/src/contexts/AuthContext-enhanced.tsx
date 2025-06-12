@@ -99,7 +99,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window === 'undefined') return;
     
     if (userData) {
-      localStorage.setItem(USER_STORAGE_KEY, serializeUser(userData));
+      const serializedUser = serializeUser(userData);
+      if (serializedUser) {
+        localStorage.setItem(USER_STORAGE_KEY, serializedUser);
+      }
     } else {
       localStorage.removeItem(USER_STORAGE_KEY);
     }

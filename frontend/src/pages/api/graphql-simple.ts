@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import fetch from 'node-fetch';
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,7 +23,7 @@ export default async function handler(
     
     // Forward response status and body
     res.status(response.status).json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('GraphQL proxy error:', error);
     res.status(500).json({ 
       errors: [{ message: `Internal server error: ${error.message}` }] 

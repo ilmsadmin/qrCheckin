@@ -47,20 +47,20 @@ export function withAuth<P extends WithAuthProps = WithAuthProps>(
 /**
  * Creates a page that requires authentication
  */
-export function withAuthentication<P>(Component: ComponentType<P>) {
+export function withAuthentication<P extends WithAuthProps>(Component: ComponentType<P>) {
   return withAuth(Component, { requireAuth: true });
 }
 
 /**
  * Creates a page that requires admin role
  */
-export function withAdminAuth<P>(Component: ComponentType<P>) {
+export function withAdminAuth<P extends WithAuthProps>(Component: ComponentType<P>) {
   return withAuth(Component, { requireAuth: true, requireAdmin: true });
 }
 
 /**
  * Creates a page that requires staff role (or higher)
  */
-export function withStaffAuth<P>(Component: ComponentType<P>) {
+export function withStaffAuth<P extends WithAuthProps>(Component: ComponentType<P>) {
   return withAuth(Component, { requireAuth: true, requireStaff: true });
 }

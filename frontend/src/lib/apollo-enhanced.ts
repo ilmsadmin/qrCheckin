@@ -200,8 +200,6 @@ export const createApolloClient = (): ApolloClient<NormalizedCacheObject> => {
       },
     },
     connectToDevTools: process.env.NODE_ENV === 'development',
-    // Log any uncaught errors
-    onError: enhancedErrorHandling
   });
 };
 
