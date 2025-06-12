@@ -117,9 +117,9 @@ export default function AdminDashboard() {
               <div className="bg-white overflow-hidden shadow rounded-lg p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">User Management</h3>
                 <p className="text-sm text-gray-600 mb-4">Manage system users, roles, and permissions</p>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <Link href="/admin/users" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
                   <i className="fas fa-users mr-2"></i>Manage Users
-                </button>
+                </Link>
               </div>
 
               <div className="bg-white overflow-hidden shadow rounded-lg p-6">
@@ -135,6 +135,14 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600 mb-4">Generate and manage QR codes</p>
                 <Link href="/admin/packages" className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 inline-block">
                   <i className="fas fa-qrcode mr-2"></i>Manage Packages
+                </Link>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">System Logs</h3>
+                <p className="text-sm text-gray-600 mb-4">View check-in and check-out activity logs</p>
+                <Link href="/admin/logs" className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 inline-block">
+                  <i className="fas fa-clipboard-list mr-2"></i>View Logs
                 </Link>
               </div>
             </div>
