@@ -80,7 +80,7 @@ export class SubscriptionResolver {
       throw new Error('Unauthorized to generate QR code for this subscription');
     }
     
-    const qrCode = await this.subscriptionService.generateQRCode(subscriptionId, subscription.userId);
+    const qrCode = await this.subscriptionService.generateQRCode(subscriptionId, subscription.user.id);
     return JSON.stringify(qrCode);
   }
 }

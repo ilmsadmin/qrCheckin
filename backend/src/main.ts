@@ -1,15 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import * as passport from 'passport';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS for frontend access
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:3003'],
     credentials: true,
   });
+  
+  // Initialize Passport
+  app.use(passport.initialize());
   
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({

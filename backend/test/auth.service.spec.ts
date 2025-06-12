@@ -1,9 +1,12 @@
+// filepath: /Volumes/DATA/project/qrCheckin/backend/test/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../src/auth/auth.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { RedisService } from '../src/redis/redis.service';
+import { Role } from '../src/common/enums';
+import { UserMapper } from '../src/common/mappers/user.mapper';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
@@ -14,6 +17,7 @@ describe('AuthService', () => {
   let prismaService: PrismaService;
   let jwtService: JwtService;
   let redisService: RedisService;
+  let userMapper: UserMapper;
 
   const mockUser = {
     id: '1',
@@ -21,7 +25,7 @@ describe('AuthService', () => {
     username: 'testuser',
     firstName: 'Test',
     lastName: 'User',
-    role: 'USER',
+    role: Role.USER,
     isActive: true,
     password: 'hashedpassword',
     createdAt: new Date(),
@@ -45,21 +49,41 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: {
-            sign: jest.fn(),
+            sign: jest.fn().mockReturnValue('jwt-token'),
           },
         },
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn(),
+            get: jest.fn().mockImplementation((key) => {
+              if (key === 'jwt.secret') return 'test-secret';
+              if (key === 'jwt.expiresIn') return '1d';
+              return null;
+            }),
           },
         },
         {
           provide: RedisService,
           useValue: {
-            set: jest.fn(),
+            set: jest.fn().mockResolvedValue(true),
             get: jest.fn(),
             del: jest.fn(),
+          },
+        },
+        {
+          provide: UserMapper,
+          useValue: {
+            mapPrismaUserToDto: jest.fn().mockImplementation((user) => ({
+              id: user.id,
+              email: user.email,
+              username: user.username,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.role,
+              isActive: user.isActive,
+              createdAt: user.createdAt,
+              updatedAt: user.updatedAt,
+            })),
           },
         },
       ],
@@ -69,6 +93,7 @@ describe('AuthService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
     redisService = module.get<RedisService>(RedisService);
+    userMapper = module.get<UserMapper>(UserMapper);
   });
 
   it('should be defined', () => {
@@ -91,7 +116,7 @@ describe('AuthService', () => {
         username: 'testuser',
         firstName: 'Test',
         lastName: 'User',
-        role: 'USER',
+        role: Role.USER,
         isActive: true,
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
@@ -121,15 +146,22 @@ describe('AuthService', () => {
         lastName: 'User',
       };
 
-      const { password, ...expectedResult } = mockUser;
-
+      const { password, ...userWithoutPassword } = mockUser;
+      
       jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
       jest.spyOn(prismaService.user, 'create').mockResolvedValue(mockUser);
+      jest.spyOn(userMapper, 'mapPrismaUserToDto').mockReturnValue(userWithoutPassword as any);
       mockedBcrypt.hash.mockResolvedValue('hashedpassword' as never);
 
       const result = await service.register(userData);
 
-      expect(result).toEqual(expectedResult);
+      expect(result).toEqual(userWithoutPassword);
+      expect(prismaService.user.create).toHaveBeenCalledWith({
+        data: {
+          ...userData,
+          password: 'hashedpassword',
+        },
+      });
       expect(bcrypt.hash).toHaveBeenCalledWith(userData.password, 10);
     });
 

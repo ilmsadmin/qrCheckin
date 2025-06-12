@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { UserMapper } from '../common/mappers/user.mapper';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private redisService: RedisService,
+    private userMapper: UserMapper,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -49,7 +51,7 @@ export class AuthService {
 
     return {
       access_token: token,
-      user,
+      user: this.userMapper.mapPrismaUserToDto(user),
     };
   }
 
@@ -80,7 +82,7 @@ export class AuthService {
     });
 
     const { password, ...result } = user;
-    return result;
+    return this.userMapper.mapPrismaUserToDto(result);
   }
 
   async logout(userId: string) {

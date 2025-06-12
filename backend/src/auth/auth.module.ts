@@ -7,11 +7,12 @@ import { AuthResolver } from './auth.resolver';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RedisModule } from '../redis/redis.module';
+import { UserMapper } from '../common/mappers/user.mapper';
 
 @Module({
   imports: [
     ConfigModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule.register({ defaultStrategy: 'jwt', session: false }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -24,7 +25,7 @@ import { RedisModule } from '../redis/redis.module';
     }),
     RedisModule,
   ],
-  providers: [AuthService, AuthResolver, PrismaService, JwtStrategy],
+  providers: [AuthService, AuthResolver, PrismaService, JwtStrategy, UserMapper],
   exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

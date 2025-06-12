@@ -1,3 +1,5 @@
+import { registerEnumType } from '@nestjs/graphql';
+
 export enum Role {
   ADMIN = 'ADMIN',
   STAFF = 'STAFF',
@@ -16,3 +18,8 @@ export enum CheckinType {
   CHECKIN = 'CHECKIN',
   CHECKOUT = 'CHECKOUT',
 }
+
+// Register enums with GraphQL
+registerEnumType(Role, { name: 'Role' });
+registerEnumType(SubscriptionType, { name: 'SubscriptionType' });
+registerEnumType(CheckinType, { name: 'CheckinType' });

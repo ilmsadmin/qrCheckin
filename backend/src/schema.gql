@@ -1,0 +1,131 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponse {
+  access_token: String!
+  user: User!
+}
+
+type Club {
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  checkin(eventId: String!, qrCodeId: String!): String!
+  checkout(eventId: String!, qrCodeId: String!): String!
+  createClub(description: String, name: String!): Club!
+  createSubscription(clubId: ID!, duration: Float!, name: String!, packageId: ID, price: Float!, type: String!): Subscription!
+  createSubscriptionPackage(clubId: String!, description: String, discountPrice: Float, duration: Float!, features: [String!], isPopular: Boolean, maxCheckins: Float, name: String!, price: Float!, sortOrder: Float, type: String!): String!
+  deleteSubscriptionPackage(id: String!): String!
+  generateQRCode(subscriptionId: ID!): String!
+  login(input: LoginInput!): AuthResponse!
+  logout: String!
+  register(input: RegisterInput!): User!
+  removeClub(id: ID!): Club!
+  toggleSubscriptionPackageStatus(id: String!): String!
+  updateClub(description: String, id: ID!, isActive: Boolean, name: String): Club!
+  updateSubscriptionPackage(description: String, discountPrice: Float, duration: Float, features: [String!], id: String!, isActive: Boolean, isPopular: Boolean, maxCheckins: Float, name: String, price: Float, sortOrder: Float, type: String): String!
+}
+
+type Query {
+  allSubscriptionPackages(includeInactive: Boolean): String!
+  checkinLogs(eventId: String, userId: String): String!
+  club(id: ID!): Club!
+  clubs: [Club!]!
+  event(id: String!): String!
+  events: String!
+  me: User!
+  popularSubscriptionPackages(limit: Float): String!
+  profile: User!
+  subscription(id: ID!): Subscription!
+  subscriptionPackage(id: String!): String!
+  subscriptionPackagesByClub(clubId: String!, includeInactive: Boolean): String!
+  user(id: ID!): User!
+  userSubscriptions(userId: ID): [Subscription!]!
+  users: [User!]!
+}
+
+input RegisterInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  password: String!
+  username: String!
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  USER
+}
+
+type Subscription {
+  club: Club!
+  createdAt: DateTime!
+  duration: Int!
+  endDate: DateTime!
+  id: ID!
+  isActive: Boolean!
+  maxCheckins: Int
+  name: String!
+  package: SubscriptionPackage
+  price: Float!
+  startDate: DateTime!
+  type: SubscriptionType!
+  updatedAt: DateTime!
+  user: User!
+}
+
+type SubscriptionPackage {
+  club: Club!
+  createdAt: DateTime!
+  description: String
+  discountPrice: Float
+  duration: Int!
+  features: [String!]!
+  id: ID!
+  isActive: Boolean!
+  isPopular: Boolean!
+  maxCheckins: Int
+  name: String!
+  price: Float!
+  sortOrder: Int!
+  type: SubscriptionType!
+  updatedAt: DateTime!
+}
+
+enum SubscriptionType {
+  DAILY
+  EVENT_SPECIFIC
+  MONTHLY
+  WEEKLY
+  YEARLY
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  firstName: String!
+  id: ID!
+  isActive: Boolean!
+  lastName: String!
+  role: Role!
+  updatedAt: DateTime!
+  username: String!
+}

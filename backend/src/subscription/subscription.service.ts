@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionMapper } from '../common/mappers/subscription.mapper';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private subscriptionMapper: SubscriptionMapper
+  ) {}
 
   async createSubscription(data: any) {
     // If packageId is provided, get package details
@@ -48,8 +52,9 @@ export class SubscriptionService {
     // Generate QR Code for subscription
     const qrCode = await this.generateQRCode(subscription.id, subscription.userId);
     
+    const result = this.subscriptionMapper.mapPrismaSubscriptionToDto(subscription);
     return {
-      ...subscription,
+      ...result,
       qrCode,
     };
   }
@@ -80,21 +85,24 @@ export class SubscriptionService {
   }
 
   async getUserSubscriptions(userId: string) {
-    return this.prisma.subscription.findMany({
+    const subscriptions = await this.prisma.subscription.findMany({
       where: { userId },
       include: {
         club: true,
         package: true,
         qrCodes: true,
+        user: true,
         _count: {
           select: { checkinLogs: true }
         }
       }
     });
+    
+    return subscriptions.map(sub => this.subscriptionMapper.mapPrismaSubscriptionToDto(sub));
   }
 
   async getSubscriptionById(id: string) {
-    return this.prisma.subscription.findUnique({
+    const subscription = await this.prisma.subscription.findUnique({
       where: { id },
       include: {
         user: true,
@@ -108,5 +116,7 @@ export class SubscriptionService {
         }
       }
     });
+    
+    return this.subscriptionMapper.mapPrismaSubscriptionToDto(subscription);
   }
 }

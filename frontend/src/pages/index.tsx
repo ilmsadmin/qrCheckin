@@ -1,8 +1,31 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { QrCodeIcon, UserGroupIcon, CalendarIcon, ChartBarIcon } from '@heroicons/react/24/outline'
+import Navigation from '../components/Navigation'
+import { useAuth } from '../contexts/AuthContext'
+import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 
 export default function Home() {
+  const { isAuthenticated, isAdmin, isStaff, loading, user } = useAuth();
+  const router = useRouter();
+  
+  // Redirect based on user role
+  useEffect(() => {
+    // Only redirect if authentication check is complete and user is authenticated
+    if (!loading && isAuthenticated && user) {
+      console.log('Home: User authenticated, redirecting based on role:', user.role);
+      
+      if (isAdmin) {
+        router.push('/admin');
+      } else if (isStaff) {
+        router.push('/scanner');
+      } else {
+        router.push('/packages');
+      }
+    }
+  }, [isAuthenticated, isAdmin, isStaff, router, loading, user]);
+
   return (
     <>
       <Head>
@@ -14,30 +37,7 @@ export default function Home() {
 
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center">
-                <QrCodeIcon className="h-8 w-8 text-primary-600" />
-                <h1 className="ml-2 text-2xl font-bold text-gray-900">QR Check-in</h1>
-              </div>
-              <nav className="flex space-x-4">
-                <Link href="/packages" className="text-gray-600 hover:text-gray-900">
-                  Packages
-                </Link>
-                <Link href="/scanner" className="text-gray-600 hover:text-gray-900">
-                  Scanner
-                </Link>
-                <Link href="/admin" className="text-gray-600 hover:text-gray-900">
-                  Admin
-                </Link>
-                <Link href="/login" className="btn btn-primary">
-                  Login
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </header>
+        <Navigation />
 
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
