@@ -10,12 +10,22 @@ import Foundation
 struct Constants {
     // MARK: - API Configuration
     struct API {
-        static let baseURL = "http://localhost:3000"
-        static let graphQLEndpoint = "\(baseURL)/graphql"
-        static let wsEndpoint = "ws://localhost:3000/graphql"
+        static var baseURL: String {
+            return ConfigManager.shared.apiBaseURL
+        }
         
-        // Timeout intervals
-        static let timeoutInterval: TimeInterval = 30.0
+        static var graphQLEndpoint: String {
+            return ConfigManager.shared.graphQLEndpoint
+        }
+        
+        static var wsEndpoint: String {
+            return ConfigManager.shared.wsEndpoint
+        }
+        
+        static var timeoutInterval: TimeInterval {
+            return ConfigManager.shared.timeoutInterval
+        }
+        
         static let cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     }
     
@@ -45,9 +55,17 @@ struct Constants {
     
     // MARK: - QR Scanner
     struct Scanner {
-        static let scanDelay: Double = 2.0 // Delay between scans
-        static let vibrationEnabled = true
-        static let soundEnabled = true
+        static var scanDelay: Double {
+            return ConfigManager.shared.scannerDelay
+        }
+        
+        static var vibrationEnabled: Bool {
+            return ConfigManager.shared.vibrationEnabled
+        }
+        
+        static var soundEnabled: Bool {
+            return ConfigManager.shared.soundEnabled
+        }
     }
     
     // MARK: - Colors (System colors for consistency)

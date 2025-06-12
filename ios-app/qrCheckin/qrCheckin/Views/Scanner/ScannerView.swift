@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ScannerView: View {
     @StateObject private var viewModel = ScannerViewModel()
+    @StateObject private var offlineService = OfflineService.shared
     @State private var showManualInput = false
     @State private var manualCode = ""
     @State private var selectedCheckinType: CheckinType = .checkin
@@ -21,6 +22,11 @@ struct ScannerView: View {
                 VStack(spacing: 20) {
                     // Header
                     headerView
+                    
+                    // Offline Status Banner
+                    if !offlineService.isOnline {
+                        offlineStatusBanner
+                    }
                     
                     // Scanner Frame
                     scannerFrameView
@@ -98,6 +104,36 @@ struct ScannerView: View {
             }
         }
         .padding(.horizontal)
+    }
+    
+    // MARK: - Offline Status Banner
+    private var offlineStatusBanner: some View {
+        HStack {
+            Image(systemName: "wifi.slash")
+                .foregroundColor(.orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Offline Mode")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+                
+                if offlineService.getQueuedItemsCount() > 0 {
+                    Text("\(offlineService.getQueuedItemsCount()) items queued for sync")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(Constants.UI.cornerRadius)
+        .overlay(
+            RoundedRectangle(cornerRadius: Constants.UI.cornerRadius)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
     }
     
     // MARK: - Scanner Frame

@@ -24,6 +24,7 @@ class ScannerViewModel: ObservableObject {
     
     private let graphQLService = GraphQLService.shared
     private let qrScannerService = QRScannerService()
+    private let offlineService = OfflineService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -144,13 +145,27 @@ class ScannerViewModel: ObservableObject {
         
         processingCheckin = true
         
+        // Check if offline - queue the item
+        if !offlineService.isOnline {
+            offlineService.queueCheckin(qrCode: code, eventId: selectedEvent.id, type: type)
+            handleOfflineCheckin(code: code, type: type, event: selectedEvent)
+            processingCheckin = false
+            return
+        }
+        
         graphQLService.performCheckin(qrCode: code, eventId: selectedEvent.id, type: type)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     self?.processingCheckin = false
                     if case .failure(let error) = completion {
-                        self?.showError(error)
+                        // If network error, queue for offline processing
+                        if case .networkError = error {
+                            self?.offlineService.queueCheckin(qrCode: code, eventId: selectedEvent.id, type: type)
+                            self?.handleOfflineCheckin(code: code, type: type, event: selectedEvent)
+                        } else {
+                            self?.showError(error)
+                        }
                     }
                 },
                 receiveValue: { [weak self] checkinLog in
@@ -174,6 +189,45 @@ class ScannerViewModel: ObservableObject {
         showSuccess("\(userName) successfully \(action)")
         
         // Clear last scanned code after successful processing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.lastScannedCode = ""
+        }
+    }
+    
+    private func handleOfflineCheckin(code: String, type: CheckinType, event: Event) {
+        // Create a mock checkin log for immediate feedback
+        let mockCheckin = CheckinLog(
+            id: "offline_\(UUID().uuidString)",
+            userId: "unknown",
+            eventId: event.id,
+            qrCodeId: code,
+            type: type,
+            timestamp: Date(),
+            createdAt: Date(),
+            user: User(
+                id: "unknown",
+                email: "",
+                username: "Unknown User",
+                firstName: nil,
+                lastName: nil,
+                role: .user,
+                isActive: true,
+                createdAt: Date(),
+                updatedAt: Date()
+            ),
+            event: event
+        )
+        
+        // Add to recent checkins
+        recentCheckins.insert(mockCheckin, at: 0)
+        if recentCheckins.count > 5 {
+            recentCheckins.removeLast()
+        }
+        
+        let action = type == .checkin ? "check-in" : "check-out"
+        showSuccess("\(action.capitalized) queued for sync (offline mode)")
+        
+        // Clear last scanned code after processing
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             self?.lastScannedCode = ""
         }
