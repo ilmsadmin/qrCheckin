@@ -152,11 +152,11 @@ export default function Profile() {
                         <div>
                           <label className="block text-gray-400 text-sm font-medium mb-2">Member Since</label>
                           <div className="bg-gray-700 rounded-md px-4 py-3 text-white">
-                            {new Date(user?.createdAt).toLocaleDateString('en-US', {
+                            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric'
-                            })}
+                            }) : 'N/A'}
                           </div>
                         </div>
                       </div>
