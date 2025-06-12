@@ -22,6 +22,9 @@ export default function Home() {
                 <h1 className="ml-2 text-2xl font-bold text-gray-900">QR Check-in</h1>
               </div>
               <nav className="flex space-x-4">
+                <Link href="/packages" className="text-gray-600 hover:text-gray-900">
+                  Packages
+                </Link>
                 <Link href="/admin" className="text-gray-600 hover:text-gray-900">
                   Admin
                 </Link>
@@ -109,11 +112,11 @@ export default function Home() {
               Join thousands of clubs and organizations using our QR check-in system.
             </p>
             <div className="mt-8 flex justify-center space-x-4">
-              <Link href="/admin" className="btn btn-primary px-8 py-3 text-lg">
-                Admin Panel
+              <Link href="/packages" className="btn btn-primary px-8 py-3 text-lg">
+                View Packages
               </Link>
-              <Link href="/register" className="btn btn-secondary px-8 py-3 text-lg">
-                Sign Up
+              <Link href="/admin" className="btn btn-secondary px-8 py-3 text-lg">
+                Admin Panel
               </Link>
             </div>
           </div>
