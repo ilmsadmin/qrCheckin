@@ -25,6 +25,9 @@ export default function Home() {
                 <Link href="/packages" className="text-gray-600 hover:text-gray-900">
                   Packages
                 </Link>
+                <Link href="/scanner" className="text-gray-600 hover:text-gray-900">
+                  Scanner
+                </Link>
                 <Link href="/admin" className="text-gray-600 hover:text-gray-900">
                   Admin
                 </Link>
