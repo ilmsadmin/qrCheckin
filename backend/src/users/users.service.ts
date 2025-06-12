@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserMapper } from '../common/mappers/user.mapper';
 import { User } from '../common/dto/user.dto';
 import { QRCode } from '../common/dto/qrcode.dto';
-import * as QRCodeLib from 'qrcode';
 
 @Injectable()
 export class UsersService {
