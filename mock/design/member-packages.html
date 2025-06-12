@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn Gói Cước - QR Check-in System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-qrcode text-2xl text-blue-600 mr-3"></i>
+                    <h1 class="text-xl font-semibold text-gray-900">Fitness Club Premium</h1>
+                </div>
+                <nav class="flex items-center space-x-8">
+                    <a href="#" class="text-gray-500 hover:text-gray-900">Trang chủ</a>
+                    <a href="#" class="text-blue-600 font-medium">Gói cước</a>
+                    <a href="#" class="text-gray-500 hover:text-gray-900">Sự kiện</a>
+                    <a href="#" class="text-gray-500 hover:text-gray-900">Liên hệ</a>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        Đăng nhập
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-700 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-4">Chọn Gói Cước Phù Hợp</h1>
+                <p class="text-xl opacity-90 mb-8">Đăng ký gói cước để trải nghiệm đầy đủ các dịch vụ của chúng tôi</p>
+                <div class="flex justify-center space-x-8 text-sm">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span>Check-in nhanh chóng</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-qrcode mr-2"></i>
+                        <span>QR code cá nhân</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        <span>Theo dõi thống kê</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Selection -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- Billing Toggle -->
+        <div class="flex justify-center mb-12">
+            <div class="bg-gray-100 p-1 rounded-lg flex">
+                <button class="px-4 py-2 rounded-md text-sm font-medium text-gray-500 focus:outline-none">
+                    Thanh toán theo tháng
+                </button>
+                <button class="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm focus:outline-none">
+                    Thanh toán theo năm
+                    <span class="ml-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Tiết kiệm 25%</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Weekly Package -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gói Hàng Tuần</h3>
+                    <p class="text-sm text-gray-500 mb-6">Trải nghiệm ngắn hạn</p>
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold text-gray-900">149,000₫</span>
+                        <span class="text-gray-500">/tuần</span>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            7 lần check-in
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            QR code tạm thời
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Hỗ trợ cơ bản
+                        </li>
+                        <li class="flex items-center text-gray-400">
+                            <i class="fas fa-times mr-3"></i>
+                            Báo cáo thống kê
+                        </li>
+                    </ul>
+                    <button class="w-full bg-gray-100 text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                        Chọn gói này
+                    </button>
+                </div>
+            </div>
+
+            <!-- Basic Package -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gói Cơ Bản</h3>
+                    <p class="text-sm text-gray-500 mb-6">Cho thành viên mới</p>
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold text-gray-900">249,000₫</span>
+                        <span class="text-gray-500">/tháng</span>
+                        <div class="text-sm text-gray-500 line-through">299,000₫</div>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            20 lần check-in/tháng
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            QR code cá nhân
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Sự kiện thường
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Hỗ trợ cơ bản
+                        </li>
+                    </ul>
+                    <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Chọn gói này
+                    </button>
+                </div>
+            </div>
+
+            <!-- Standard Package - Most Popular -->
+            <div class="bg-white rounded-2xl shadow-xl border-2 border-blue-500 p-8 relative">
+                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <span class="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">Phổ biến nhất</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gói Tiêu Chuẩn</h3>
+                    <p class="text-sm text-gray-500 mb-6">Cho thành viên thường xuyên</p>
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold text-gray-900">399,000₫</span>
+                        <span class="text-gray-500">/tháng</span>
+                        <div class="text-sm text-gray-500 line-through">499,000₫</div>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            50 lần check-in/tháng
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            QR code cá nhân
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Tất cả sự kiện
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Hỗ trợ ưu tiên
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Báo cáo thống kê
+                        </li>
+                    </ul>
+                    <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Chọn gói này
+                    </button>
+                </div>
+            </div>
+
+            <!-- Premium Package -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gói Premium</h3>
+                    <p class="text-sm text-gray-500 mb-6">Cao cấp không giới hạn</p>
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold text-gray-900">699,000₫</span>
+                        <span class="text-gray-500">/tháng</span>
+                        <div class="text-sm text-gray-500 line-through">799,000₫</div>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Check-in không giới hạn
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            QR code Premium
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Sự kiện VIP
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Hỗ trợ 24/7
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            Báo cáo nâng cao
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-crown text-yellow-500 mr-3"></i>
+                            Ưu đãi độc quyền
+                        </li>
+                    </ul>
+                    <button class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity">
+                        Chọn gói này
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yearly VIP Package - Separate -->
+        <div class="mt-16">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-crown text-2xl mr-3"></i>
+                                <h3 class="text-2xl font-bold">Gói Năm VIP</h3>
+                                <span class="ml-3 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-medium">
+                                    Tiết kiệm 25%
+                                </span>
+                            </div>
+                            <p class="text-lg opacity-90 mb-4">
+                                Gói premium trọn năm với đầy đủ tính năng và ưu đãi đặc biệt
+                            </p>
+                            <div class="grid grid-cols-2 gap-6 text-sm">
+                                <div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-infinity mr-3"></i>
+                                        <span>Check-in không giới hạn cả năm</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-star mr-3"></i>
+                                        <span>Sự kiện VIP độc quyền</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-gift mr-3"></i>
+                                        <span>Quà tặng hàng tháng</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-users mr-3"></i>
+                                        <span>Mời khách không giới hạn</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-headset mr-3"></i>
+                                        <span>Tư vấn cá nhân hóa</span>
+                                    </div>
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-percent mr-3"></i>
+                                        <span>Giảm giá cho người thân</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center ml-8">
+                            <div class="mb-4">
+                                <div class="text-4xl font-bold">5,990,000₫</div>
+                                <div class="text-lg opacity-75 line-through">7,990,000₫</div>
+                                <div class="text-sm opacity-75">Chỉ 499,000₫/tháng</div>
+                            </div>
+                            <button class="bg-white text-purple-600 py-3 px-8 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors">
+                                Chọn gói VIP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="mt-16">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Câu hỏi thường gặp</h2>
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="bg-white rounded-lg p-6 shadow-sm border">
+                    <h3 class="font-semibold text-gray-900 mb-2">Làm thế nào để thay đổi gói cước?</h3>
+                    <p class="text-gray-600">Bạn có thể nâng cấp hoặc hạ cấp gói cước bất cứ lúc nào trong tài khoản của mình. Thay đổi sẽ có hiệu lực từ chu kỳ thanh toán tiếp theo.</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm border">
+                    <h3 class="font-semibold text-gray-900 mb-2">QR code có hết hạn không?</h3>
+                    <p class="text-gray-600">QR code sẽ có hiệu lực trong suốt thời gian gói cước của bạn. Khi gia hạn, QR code sẽ được tự động cập nhật.</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm border">
+                    <h3 class="font-semibold text-gray-900 mb-2">Tôi có thể hủy gói cước không?</h3>
+                    <p class="text-gray-600">Có, bạn có thể hủy gói cước bất cứ lúc nào. Gói cước sẽ tiếp tục có hiệu lực đến hết chu kỳ đã thanh toán.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center mb-4">
+                    <i class="fas fa-qrcode text-2xl mr-3"></i>
+                    <span class="text-xl font-semibold">QR Check-in System</span>
+                </div>
+                <p class="text-gray-400 mb-6">Giải pháp check-in thông minh cho câu lạc bộ hiện đại</p>
+                <div class="flex justify-center space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white">Chính sách bảo mật</a>
+                    <a href="#" class="text-gray-400 hover:text-white">Điều khoản sử dụng</a>
+                    <a href="#" class="text-gray-400 hover:text-white">Liên hệ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

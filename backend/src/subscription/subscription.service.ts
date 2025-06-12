@@ -7,11 +7,41 @@ export class SubscriptionService {
   constructor(private prisma: PrismaService) {}
 
   async createSubscription(data: any) {
+    // If packageId is provided, get package details
+    let subscriptionData = { ...data };
+    
+    if (data.packageId) {
+      const packageData = await this.prisma.subscriptionPackage.findUnique({
+        where: { id: data.packageId },
+        include: { club: true }
+      });
+
+      if (!packageData) {
+        throw new Error('Subscription package not found');
+      }
+
+      if (!packageData.isActive) {
+        throw new Error('Subscription package is not active');
+      }
+
+      // Override data with package details
+      subscriptionData = {
+        ...data,
+        name: packageData.name,
+        type: packageData.type,
+        price: packageData.discountPrice || packageData.price,
+        duration: packageData.duration,
+        maxCheckins: packageData.maxCheckins,
+        clubId: packageData.clubId,
+      };
+    }
+
     const subscription = await this.prisma.subscription.create({
-      data,
+      data: subscriptionData,
       include: {
         user: true,
         club: true,
+        package: true,
       }
     });
 
@@ -54,6 +84,7 @@ export class SubscriptionService {
       where: { userId },
       include: {
         club: true,
+        package: true,
         qrCodes: true,
         _count: {
           select: { checkinLogs: true }
@@ -68,6 +99,7 @@ export class SubscriptionService {
       include: {
         user: true,
         club: true,
+        package: true,
         qrCodes: true,
         checkinLogs: {
           include: {

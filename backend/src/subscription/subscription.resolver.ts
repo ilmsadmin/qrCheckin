@@ -13,6 +13,7 @@ export class SubscriptionResolver {
     @Args('type') type: string,
     @Args('price') price: number,
     @Args('duration') duration: number,
+    @Args('packageId', { nullable: true }) packageId?: string,
   ) {
     const result = await this.subscriptionService.createSubscription({
       userId,
@@ -21,6 +22,7 @@ export class SubscriptionResolver {
       type,
       price,
       duration,
+      packageId,
       startDate: new Date(),
       endDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000),
     });
