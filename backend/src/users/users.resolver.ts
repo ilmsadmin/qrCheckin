@@ -1,7 +1,8 @@
-import { Resolver, Query, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from '../common/dto/user.dto';
+import { QRCode } from '../common/dto/qrcode.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -35,5 +36,14 @@ export class UsersResolver {
   @Query(() => User)
   async profile(@CurrentUser() user: User): Promise<User> {
     return this.usersService.findOne(user.id);
+  }
+
+  @Mutation(() => QRCode)
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.STAFF)
+  async generateUserQRCode(
+    @Args('userId', { type: () => ID }) userId: string,
+  ): Promise<QRCode> {
+    return this.usersService.generateUserQRCode(userId);
   }
 }
