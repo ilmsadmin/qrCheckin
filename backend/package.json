@@ -29,7 +29,7 @@
     "@nestjs/apollo": "^12.0.0",
     "@nestjs/jwt": "^10.0.0",
     "@nestjs/passport": "^10.0.0",
-    "@nestjs/redis": "^0.3.0",
+    "@nestjs/cache-manager": "^2.0.0",
     "@prisma/client": "^5.0.0",
     "apollo-server-express": "^3.12.0",
     "graphql": "^16.6.0",

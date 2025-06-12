@@ -10,6 +10,7 @@ The QR Check-in System is a comprehensive solution for managing club members and
 - User registration and profile management
 - Role-based access control (Admin, Staff, User)
 - Subscription package management
+- Individual subscription tracking
 - QR code generation for members
 
 ### 2. Event Management
@@ -86,16 +87,18 @@ The QR Check-in System is a comprehensive solution for managing club members and
 - Profile management
 - QR code access
 - Check-in history
+- Subscription package browsing and selection
 - Subscription management
 
 ## Workflow
 
 1. **Registration**: Admin creates clubs and events
-2. **Subscription**: Members subscribe to club packages
-3. **QR Generation**: System generates unique QR codes for members
-4. **Distribution**: QR codes sent via message or shareable link
-5. **Check-in**: Staff scan QR codes for member check-in/check-out
-6. **Tracking**: System logs all activities and provides analytics
+2. **Package Setup**: Admin creates subscription packages with pricing and features
+3. **Package Selection**: Members browse and subscribe to available packages
+4. **QR Generation**: System generates unique QR codes for member subscriptions
+5. **Distribution**: QR codes sent via message or shareable link
+6. **Check-in**: Staff scan QR codes for member check-in/check-out
+7. **Tracking**: System logs all activities and provides analytics
 
 ## Technology Stack Benefits
 

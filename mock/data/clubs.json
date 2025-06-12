@@ -1,0 +1,20 @@
+[
+  {
+    "id": "club_001",
+    "name": "Fitness Club Premium",
+    "description": "Câu lạc bộ thể hình và sức khỏe hàng đầu với đầy đủ tiện ích hiện đại",
+    "isActive": true
+  },
+  {
+    "id": "club_002", 
+    "name": "Yoga & Wellness Center",
+    "description": "Trung tâm yoga và thư giãn cho sức khỏe tinh thần và thể chất",
+    "isActive": true
+  },
+  {
+    "id": "club_003",
+    "name": "Swimming Club",
+    "description": "Câu lạc bộ bơi lội chuyên nghiệp với hồ bơi Olympic",
+    "isActive": true
+  }
+]

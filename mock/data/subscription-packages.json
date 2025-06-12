@@ -1,0 +1,134 @@
+[
+  {
+    "id": "pkg_001",
+    "name": "Gói Cơ Bản",
+    "description": "Gói cơ bản cho thành viên mới, phù hợp để trải nghiệm dịch vụ",
+    "type": "MONTHLY",
+    "price": 299000,
+    "discountPrice": 249000,
+    "duration": 30,
+    "maxCheckins": 20,
+    "features": [
+      "20 lần check-in/tháng",
+      "Truy cập các sự kiện thường",
+      "Hỗ trợ khách hàng cơ bản",
+      "QR code cá nhân"
+    ],
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "clubId": "club_001"
+  },
+  {
+    "id": "pkg_002", 
+    "name": "Gói Tiêu Chuẩn",
+    "description": "Gói phổ biến nhất cho các thành viên thường xuyên",
+    "type": "MONTHLY",
+    "price": 499000,
+    "discountPrice": 399000,
+    "duration": 30,
+    "maxCheckins": 50,
+    "features": [
+      "50 lần check-in/tháng",
+      "Truy cập tất cả sự kiện",
+      "Hỗ trợ khách hàng ưu tiên",
+      "QR code cá nhân",
+      "Báo cáo thống kê chi tiết",
+      "Ưu đãi đặc biệt"
+    ],
+    "isActive": true,
+    "isPopular": true,
+    "sortOrder": 2,
+    "clubId": "club_001"
+  },
+  {
+    "id": "pkg_003",
+    "name": "Gói Premium",
+    "description": "Gói cao cấp với đầy đủ tính năng và không giới hạn",
+    "type": "MONTHLY", 
+    "price": 799000,
+    "discountPrice": 699000,
+    "duration": 30,
+    "maxCheckins": null,
+    "features": [
+      "Check-in không giới hạn",
+      "Truy cập VIP tất cả sự kiện",
+      "Hỗ trợ khách hàng 24/7",
+      "QR code cá nhân Premium",
+      "Báo cáo thống kê nâng cao",
+      "Ưu đãi và quà tặng độc quyền",
+      "Khả năng mời khách",
+      "Tư vấn cá nhân hóa"
+    ],
+    "isActive": true,
+    "isPopular": true,
+    "sortOrder": 3,
+    "clubId": "club_001"
+  },
+  {
+    "id": "pkg_004",
+    "name": "Gói Hàng Tuần",
+    "description": "Gói ngắn hạn cho khách thăm quan hoặc trải nghiệm",
+    "type": "WEEKLY",
+    "price": 149000,
+    "discountPrice": null,
+    "duration": 7,
+    "maxCheckins": 7,
+    "features": [
+      "7 lần check-in/tuần",
+      "Truy cập sự kiện cơ bản",
+      "QR code tạm thời",
+      "Hỗ trợ khách hàng cơ bản"
+    ],
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 0,
+    "clubId": "club_001"
+  },
+  {
+    "id": "pkg_005",
+    "name": "Gói Năm VIP",
+    "description": "Gói tiết kiệm nhất cho thành viên lâu dài với nhiều ưu đãi",
+    "type": "YEARLY",
+    "price": 7990000,
+    "discountPrice": 5990000,
+    "duration": 365,
+    "maxCheckins": null,
+    "features": [
+      "Check-in không giới hạn cả năm",
+      "Truy cập VIP tất cả sự kiện",
+      "Hỗ trợ khách hàng 24/7",
+      "QR code Premium trọn đời",
+      "Báo cáo thống kê chuyên sâu",
+      "Ưu đãi và quà tặng hàng tháng",
+      "Khả năng mời khách không giới hạn",
+      "Tư vấn cá nhân hóa",
+      "Giảm giá cho người thân",
+      "Sự kiện độc quyền cho VIP"
+    ],
+    "isActive": true,
+    "isPopular": true,
+    "sortOrder": 4,
+    "clubId": "club_001"
+  },
+  {
+    "id": "pkg_006",
+    "name": "Gói Sự Kiện",
+    "description": "Gói đặc biệt cho một sự kiện cụ thể",
+    "type": "EVENT_SPECIFIC",
+    "price": 99000,
+    "discountPrice": null,
+    "duration": 1,
+    "maxCheckins": 1,
+    "features": [
+      "Truy cập 1 sự kiện cụ thể",
+      "QR code dùng một lần",
+      "Hỗ trợ tại sự kiện",
+      "Chứng nhận tham dự"
+    ],
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 5,
+    "clubId": "club_001"
+  }
+]

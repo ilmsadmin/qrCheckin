@@ -48,6 +48,14 @@ qrCheckin/
 - Profile management
 - Role-based access control
 
+### 📦 Subscription Package System
+- Admin package creation and management
+- Flexible pricing with discount options
+- Feature-based package differentiation
+- Member package browsing and selection
+- Popular package highlighting
+- Multiple subscription types (Daily, Weekly, Monthly, Yearly, Event-specific)
+
 ### 🏢 Club & Event Management
 - Create and manage clubs
 - Event scheduling and capacity management
@@ -188,6 +196,8 @@ Detailed documentation is available in the `/docs` folder:
 
 HTML mockups and design templates are available in the `/mock` folder:
 - Admin dashboard mockup
+- Subscription package management interface
+- Member package selection interface
 - QR scanner interface
 - Sample data for development
 

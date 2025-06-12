@@ -81,21 +81,22 @@
 │ - id        │     │ - id        │     │ - id        │
 │ - email     │     │ - userId    │     │ - name      │
 │ - username  │     │ - clubId    │     │ - isActive  │
-│ - role      │     │ - type      │     └─────────────┘
-│ - isActive  │     │ - startDate │
-└─────────────┘     │ - endDate   │
-        │           └─────────────┘
-        │                   │
-        │                   │
-        ▽                   ▽
-┌─────────────┐     ┌─────────────┐
-│   QRCode    │     │    Event    │
-│             │     │             │
-│ - id        │     │ - id        │
-│ - code      │     │ - name      │
-│ - userId    │     │ - clubId    │
-│ - subId     │     │ - startTime │
-│ - isActive  │     │ - endTime   │
+│ - role      │     │ - packageId │     └─────────────┘
+│ - isActive  │     │ - type      │             │
+└─────────────┘     │ - startDate │             │
+        │           │ - endDate   │             ▽
+        │           └─────────────┘     ┌─────────────┐
+        │                   │          │Subscription │
+        │                   │          │   Package   │
+        ▽                   ▽          │             │
+┌─────────────┐     ┌─────────────┐    │ - id        │
+│   QRCode    │     │    Event    │    │ - name      │
+│             │     │             │    │ - clubId    │
+│ - id        │     │ - id        │    │ - type      │
+│ - code      │     │ - name      │    │ - price     │
+│ - userId    │     │ - clubId    │    │ - features  │
+│ - subId     │     │ - startTime │    │ - isActive  │
+│ - isActive  │     │ - endTime   │    └─────────────┘
 └─────────────┘     └─────────────┘
         │                   │
         └───────┬───────────┘
@@ -111,6 +112,36 @@
         │ - timestamp │
         └─────────────┘
 ```
+
+### Subscription Package System
+
+The subscription package system allows administrators to create predefined packages that members can choose from, rather than creating individual subscriptions manually.
+
+**Key Components:**
+
+1. **SubscriptionPackage**: Template packages with predefined features, pricing, and limitations
+2. **Subscription**: Individual member subscriptions based on selected packages
+3. **Package-Subscription Relationship**: Links individual subscriptions to their source packages
+
+**Package Features:**
+- Flexible pricing with optional discount pricing
+- Feature lists (stored as JSON array)
+- Different subscription types (DAILY, WEEKLY, MONTHLY, YEARLY, EVENT_SPECIFIC)
+- Check-in limitations per package
+- Popular package highlighting
+- Custom sorting order
+
+**Admin Workflow:**
+1. Create subscription packages for each club
+2. Set pricing, features, and limitations
+3. Mark popular packages for better visibility
+4. Manage package activation/deactivation
+
+**Member Workflow:**
+1. Browse available packages for a club
+2. Compare features and pricing
+3. Select and subscribe to a package
+4. System automatically generates subscription based on package template
 
 ## Frontend Architecture
 
