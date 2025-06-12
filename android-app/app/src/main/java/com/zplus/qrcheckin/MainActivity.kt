@@ -14,6 +14,9 @@ import com.zplus.qrcheckin.domain.model.*
 import com.zplus.qrcheckin.presentation.navigation.BottomNavItem
 import com.zplus.qrcheckin.presentation.navigation.QRCheckinBottomBar
 import com.zplus.qrcheckin.presentation.scanner.QRScannerScreen
+import com.zplus.qrcheckin.presentation.logs.LogsScreen
+import com.zplus.qrcheckin.presentation.stats.StatsScreen
+import com.zplus.qrcheckin.presentation.profile.ProfileScreen
 import com.zplus.qrcheckin.ui.theme.QrCheckinTheme
 import java.util.*
 
@@ -159,37 +162,26 @@ fun QRCheckinApp() {
                     )
                 }
                 BottomNavItem.Logs.route -> {
-                    // TODO: Implement logs screen
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    ) {
-                        Text(
-                            "Logs Screen - Coming Soon",
-                            color = Color.White
-                        )
-                    }
+                    LogsScreen(
+                        logs = mockRecentLogs,
+                        onRefresh = {
+                            // TODO: Refresh logs
+                        }
+                    )
                 }
                 BottomNavItem.Stats.route -> {
-                    // TODO: Implement stats screen
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    ) {
-                        Text(
-                            "Stats Screen - Coming Soon",
-                            color = Color.White
-                        )
-                    }
+                    StatsScreen(
+                        logs = mockRecentLogs,
+                        events = mockEvents
+                    )
                 }
                 BottomNavItem.Profile.route -> {
-                    // TODO: Implement profile screen
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    ) {
-                        Text(
-                            "Profile Screen - Coming Soon",
-                            color = Color.White
-                        )
-                    }
+                    ProfileScreen(
+                        user = mockUser,
+                        onLogout = {
+                            // TODO: Handle logout
+                        }
+                    )
                 }
             }
         }

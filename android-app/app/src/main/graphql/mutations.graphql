@@ -1,0 +1,70 @@
+mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    accessToken
+    user {
+      id
+      email
+      username
+      firstName
+      lastName
+      role
+      isActive
+    }
+  }
+}
+
+mutation Logout {
+  logout
+}
+
+mutation Checkin($qrCodeId: ID!, $eventId: ID!) {
+  checkin(qrCodeId: $qrCodeId, eventId: $eventId) {
+    id
+    type
+    timestamp
+    userId
+    eventId
+    subscriptionId
+    qrCodeId
+    user {
+      id
+      firstName
+      lastName
+    }
+    event {
+      id
+      name
+    }
+  }
+}
+
+mutation Checkout($qrCodeId: ID!, $eventId: ID!) {
+  checkout(qrCodeId: $qrCodeId, eventId: $eventId) {
+    id
+    type
+    timestamp
+    userId
+    eventId
+    subscriptionId
+    qrCodeId
+    user {
+      id
+      firstName
+      lastName
+    }
+    event {
+      id
+      name
+    }
+  }
+}
+
+mutation ScanQRCode($code: String!) {
+  scanQRCode(code: $code) {
+    id
+    code
+    isActive
+    userId
+    subscriptionId
+  }
+}
