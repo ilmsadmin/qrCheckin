@@ -1,34 +1,36 @@
-import { Resolver, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Mutation, Args, Query } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { AuthResponse } from '../common/dto/auth-response.dto';
+import { LoginInput, RegisterInput } from '../common/dto/auth-input.dto';
+import { User } from '../common/dto/user.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from './current-user.decorator';
 
 @Resolver()
 export class AuthResolver {
   constructor(private authService: AuthService) {}
 
-  @Mutation(() => String)
-  async login(
-    @Args('email') email: string,
-    @Args('password') password: string,
-  ) {
-    const result = await this.authService.login(email, password);
-    return result.access_token;
+  @Mutation(() => AuthResponse)
+  async login(@Args('input') input: LoginInput): Promise<AuthResponse> {
+    return this.authService.login(input.email, input.password);
+  }
+
+  @Mutation(() => User)
+  async register(@Args('input') input: RegisterInput): Promise<User> {
+    return this.authService.register(input);
   }
 
   @Mutation(() => String)
-  async register(
-    @Args('email') email: string,
-    @Args('username') username: string,
-    @Args('password') password: string,
-    @Args('firstName') firstName: string,
-    @Args('lastName') lastName: string,
-  ) {
-    await this.authService.register({
-      email,
-      username,
-      password,
-      firstName,
-      lastName,
-    });
-    return 'User registered successfully';
+  @UseGuards(JwtAuthGuard)
+  async logout(@CurrentUser() user: User): Promise<string> {
+    await this.authService.logout(user.id);
+    return 'Logged out successfully';
+  }
+
+  @Query(() => User)
+  @UseGuards(JwtAuthGuard)
+  async me(@CurrentUser() user: User): Promise<User> {
+    return user;
   }
 }
