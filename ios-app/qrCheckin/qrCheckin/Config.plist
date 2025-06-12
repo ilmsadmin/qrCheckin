@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>API_BASE_URL</key>
-    <string>http://localhost:3000</string>
+    <string>http://192.168.1.40:4000</string>
     <key>GRAPHQL_ENDPOINT</key>
-    <string>http://localhost:3000/graphql</string>
+    <string>http://192.168.1.40:4000/graphql</string>
     <key>WS_ENDPOINT</key>
-    <string>ws://localhost:3000/graphql</string>
+    <string>ws://192.168.1.40:4000/graphql</string>
     <key>TIMEOUT_INTERVAL</key>
     <integer>30</integer>
     <key>SCANNER_DELAY</key>

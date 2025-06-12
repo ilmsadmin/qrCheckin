@@ -11,7 +11,7 @@ struct Constants {
     // MARK: - API Configuration
     struct API {
         static var baseURL: String {
-            return ConfigManager.shared.apiBaseURL
+            return ConfigManager.shared.baseURL
         }
         
         static var graphQLEndpoint: String {
@@ -43,17 +43,10 @@ struct Constants {
         static let offlineQueue = "offline_queue"
         static let selectedClubId = "selected_club_id"
         static let appVersion = "app_version"
+        static let offlineQueueKey = "offlineQueueKey"
     }
     
-    // MARK: - UI Constants
-    struct UI {
-        static let cornerRadius: CGFloat = 12.0
-        static let shadowRadius: CGFloat = 4.0
-        static let animationDuration: Double = 0.3
-        static let scannerFrameSize: CGFloat = 250.0
-    }
-    
-    // MARK: - QR Scanner
+    // MARK: - Scanner Configuration
     struct Scanner {
         static var scanDelay: Double {
             return ConfigManager.shared.scannerDelay
@@ -66,14 +59,29 @@ struct Constants {
         static var soundEnabled: Bool {
             return ConfigManager.shared.soundEnabled
         }
+        
+        static let cameraSession = "camera_session"
+        static let sessionQueue = "session_queue"
     }
     
-    // MARK: - Colors (System colors for consistency)
-    struct Colors {
-        static let primary = "AccentColor"
-        static let success = "systemGreen"
-        static let error = "systemRed"
-        static let warning = "systemOrange"
+    // MARK: - UI Constants
+    struct UI {
+        static let cornerRadius: CGFloat = 12
+        static let shadowRadius: CGFloat = 5
+        static let shadowOpacity: Float = 0.1
+        static let animationDuration: Double = 0.3
+        
+        // Scanner UI
+        static let scannerFrameSize: CGFloat = 300
+        
+        // Tab bar
+        static let tabBarHeight: CGFloat = 80
+        static let tabIconSize: CGFloat = 24
+        
+        // Colors
+        static let primaryColor = "primaryColor"
+        static let secondaryColor = "secondaryColor"
+        static let accentColor = "accentColor"
         static let background = "systemBackground"
         static let secondaryBackground = "secondarySystemBackground"
     }

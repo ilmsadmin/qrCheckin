@@ -25,6 +25,30 @@ struct CheckinLog: Identifiable, Codable {
     var user: User?
     var event: Event?
     
+    // For backward compatibility with some mock data
+    init(id: String, eventId: String, userId: String, timestamp: Date, status: String) {
+        self.id = id
+        self.eventId = eventId
+        self.userId = userId
+        self.timestamp = timestamp
+        self.qrCodeId = nil
+        self.type = status == "CHECKED_IN" ? .checkin : .checkout
+        self.createdAt = nil
+    }
+    
+    // Add a custom initializer for CheckinLog that includes all needed properties
+    init(id: String, userId: String, eventId: String, qrCodeId: String?, type: CheckinType, timestamp: Date, createdAt: Date?, user: User? = nil, event: Event? = nil) {
+        self.id = id
+        self.userId = userId
+        self.eventId = eventId
+        self.qrCodeId = qrCodeId
+        self.type = type
+        self.timestamp = timestamp
+        self.createdAt = createdAt
+        self.user = user
+        self.event = event
+    }
+    
     var displayTime: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short

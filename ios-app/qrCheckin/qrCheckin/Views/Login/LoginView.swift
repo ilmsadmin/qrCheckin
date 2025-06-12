@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var viewModel = LoginViewModel()
+    @EnvironmentObject var viewModel: LoginViewModel
     @State private var email = ""
     @State private var password = ""
     
@@ -61,6 +61,15 @@ struct LoginView: View {
                         .cornerRadius(Constants.UI.cornerRadius)
                     }
                     .disabled(email.isEmpty || password.isEmpty || viewModel.isLoading)
+                    
+                    // Test login button (for development)
+                    Button(action: {
+                        viewModel.isLoggedIn = true
+                    }) {
+                        Text("Skip Login (Test)")
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
                 }
                 
                 Spacer()
@@ -83,4 +92,5 @@ struct LoginView: View {
 
 #Preview {
     LoginView()
+        .environmentObject(LoginViewModel())
 }

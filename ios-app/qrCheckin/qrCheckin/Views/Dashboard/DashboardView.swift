@@ -18,6 +18,9 @@ struct DashboardView: View {
                     // Header Stats
                     statsSection
                     
+                    // Club Filter
+                    clubFilterSection
+                    
                     // Active Events
                     activeEventsSection
                     
@@ -27,16 +30,46 @@ struct DashboardView: View {
                 .padding()
             }
             .navigationTitle("Dashboard")
-            .navigationBarItems(
-                trailing: Button("Logout") {
-                    loginViewModel.logout()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        loginViewModel.logout()
+                    }) {
+                        Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
                 }
-            )
-            .onAppear {
-                viewModel.loadData()
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        viewModel.refresh()
+                    }) {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                }
             }
             .refreshable {
                 viewModel.refresh()
+            }
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.white.opacity(0.8))
+                                .frame(width: 100, height: 100)
+                        )
+                }
+            }
+            .alert(isPresented: .init(
+                get: { viewModel.error != nil },
+                set: { if !$0 { viewModel.error = nil } }
+            )) {
+                Alert(
+                    title: Text("Error"),
+                    message: Text(viewModel.error?.localizedDescription ?? "Unknown error"),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
@@ -63,13 +96,52 @@ struct DashboardView: View {
                 )
                 
                 StatCardView(
-                    title: "Active Events",
-                    value: "\(viewModel.activeEvents.count)",
+                    title: "Active Users",
+                    value: "\(viewModel.todayStats.activeUsers)",
                     color: .blue,
-                    icon: "calendar"
+                    icon: "person.3.fill"
                 )
             }
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
+    
+    // MARK: - Club Filter Section
+    private var clubFilterSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Filter by Club")
+                .font(.headline)
+                
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ClubFilterButton(
+                        isSelected: viewModel.selectedClub == nil,
+                        name: "All Clubs"
+                    ) {
+                        viewModel.selectedClub = nil
+                        viewModel.loadData()
+                    }
+                    
+                    ForEach(viewModel.clubs) { club in
+                        ClubFilterButton(
+                            isSelected: viewModel.selectedClub?.id == club.id,
+                            name: club.name
+                        ) {
+                            viewModel.selectedClub = club
+                            viewModel.filterEventsByClub(clubId: club.id)
+                        }
+                    }
+                }
+                .padding(.vertical, 5)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
     
     // MARK: - Active Events Section
@@ -79,18 +151,32 @@ struct DashboardView: View {
                 .font(.headline)
             
             if viewModel.activeEvents.isEmpty {
-                Text("No active events")
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                VStack(spacing: 10) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray)
+                    
+                    Text("No active events at the moment")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.activeEvents) { event in
-                        EventCardView(event: event)
+                        NavigationLink(destination: EventDetailView(event: event)) {
+                            EventCardView(event: event)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
     
     // MARK: - Recent Activity Section
@@ -100,10 +186,17 @@ struct DashboardView: View {
                 .font(.headline)
             
             if viewModel.recentActivity.isEmpty {
-                Text("No recent activity")
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                VStack(spacing: 10) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray)
+                    
+                    Text("No recent activity")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
             } else {
                 LazyVStack(spacing: 8) {
                     ForEach(viewModel.recentActivity) { checkin in
@@ -112,6 +205,10 @@ struct DashboardView: View {
                 }
             }
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
 
@@ -137,8 +234,26 @@ struct StatCardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(Constants.UI.cornerRadius)
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct ClubFilterButton: View {
+    let isSelected: Bool
+    let name: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(name)
+                .font(.subheadline)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.blue : Color.gray.opacity(0.2))
+                .foregroundColor(isSelected ? .white : .primary)
+                .cornerRadius(20)
+        }
     }
 }
 
@@ -192,8 +307,8 @@ struct EventCardView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(Constants.UI.cornerRadius)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
     }
 }
 

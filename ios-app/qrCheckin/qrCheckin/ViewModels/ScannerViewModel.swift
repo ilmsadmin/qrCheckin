@@ -8,6 +8,10 @@
 import Foundation
 import Combine
 import SwiftUI
+import AVFoundation // For camera access
+
+// Import Constants to access AppError
+import UIKit // Required for UIApplication
 
 @MainActor
 class ScannerViewModel: ObservableObject {
@@ -22,8 +26,8 @@ class ScannerViewModel: ObservableObject {
     @Published var lastScannedCode = ""
     @Published var processingCheckin = false
     
-    private let graphQLService = GraphQLService.shared
-    private let qrScannerService = QRScannerService()
+    private let mockDataService = MockDataService.shared
+    let scannerService = QRScannerService()
     private let offlineService = OfflineService.shared
     private var cancellables = Set<AnyCancellable>()
     
@@ -37,7 +41,7 @@ class ScannerViewModel: ObservableObject {
     // MARK: - Setup
     private func setupSubscriptions() {
         // Listen for scanned QR codes
-        qrScannerService.$scannedCode
+        scannerService.$scannedCode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] code in
                 if !code.isEmpty {
@@ -47,7 +51,7 @@ class ScannerViewModel: ObservableObject {
             .store(in: &cancellables)
         
         // Listen for scanner errors
-        qrScannerService.$error
+        scannerService.$error
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
@@ -60,13 +64,17 @@ class ScannerViewModel: ObservableObject {
     func loadEvents() {
         isLoading = true
         
-        graphQLService.fetchEvents()
+        mockDataService.getEvents()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
-                        self?.showError(error)
+                        if let appError = error as? AppError {
+                            self?.showError(appError)
+                        } else {
+                            self?.showError(AppError.unknownError)
+                        }
                     }
                 },
                 receiveValue: { [weak self] events in
@@ -82,10 +90,10 @@ class ScannerViewModel: ObservableObject {
     }
     
     func loadRecentCheckins() {
-        graphQLService.fetchRecentCheckins(limit: 5)
+        mockDataService.getCheckinLogs()
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] completion in
+                receiveCompletion: { completion in
                     if case .failure(let error) = completion {
                         print("Failed to load recent checkins: \(error.localizedDescription)")
                     }
@@ -111,9 +119,7 @@ class ScannerViewModel: ObservableObject {
     }
     
     // MARK: - QR Scanning
-    var scannerService: QRScannerService {
-        return qrScannerService
-    }
+    // The scannerService is already a property
     
     private func handleScannedCode(_ code: String) {
         guard !code.isEmpty, code != lastScannedCode else { return }
@@ -153,26 +159,34 @@ class ScannerViewModel: ObservableObject {
             return
         }
         
-        graphQLService.performCheckin(qrCode: code, eventId: selectedEvent.id, type: type)
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    self?.processingCheckin = false
-                    if case .failure(let error) = completion {
-                        // If network error, queue for offline processing
-                        if case .networkError = error {
-                            self?.offlineService.queueCheckin(qrCode: code, eventId: selectedEvent.id, type: type)
-                            self?.handleOfflineCheckin(code: code, type: type, event: selectedEvent)
-                        } else {
-                            self?.showError(error)
-                        }
-                    }
-                },
-                receiveValue: { [weak self] checkinLog in
-                    self?.handleSuccessfulCheckin(checkinLog)
-                }
+        // Simulate API call with mock data
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self, let selectedEvent = self.selectedEvent else { return }
+            let mockCheckin = CheckinLog(
+                id: "checkin_\(UUID().uuidString)",
+                userId: "user_001",
+                eventId: selectedEvent.id,
+                qrCodeId: code,
+                type: type,
+                timestamp: Date(),
+                createdAt: Date(),
+                user: User(
+                    id: "user_001",
+                    email: "john.doe@example.com",
+                    username: "johndoe",
+                    firstName: "John",
+                    lastName: "Doe",
+                    role: .user,
+                    isActive: true,
+                    createdAt: Date(),
+                    updatedAt: Date()
+                ),
+                event: selectedEvent
             )
-            .store(in: &cancellables)
+            
+            self.processingCheckin = false
+            self.handleSuccessfulCheckin(mockCheckin)
+        }
     }
     
     private func handleSuccessfulCheckin(_ checkinLog: CheckinLog) {
@@ -244,6 +258,7 @@ class ScannerViewModel: ObservableObject {
         alertTitle = "Error"
         alertMessage = error.localizedDescription
         showAlert = true
+        showAlert = true
     }
     
     private func showSuccess(_ message: String) {
@@ -256,5 +271,16 @@ class ScannerViewModel: ObservableObject {
     func refresh() {
         loadEvents()
         loadRecentCheckins()
+    }
+}
+
+// Add an extension method to convert Error to AppError
+private extension ScannerViewModel {
+    func convertToAppError(_ error: Error) -> AppError {
+        if let appError = error as? AppError {
+            return appError
+        } else {
+            return AppError.unknownError
+        }
     }
 }

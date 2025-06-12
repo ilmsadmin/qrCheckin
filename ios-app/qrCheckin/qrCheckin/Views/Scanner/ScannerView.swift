@@ -17,41 +17,48 @@ struct ScannerView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(.systemBackground)
                 
-                VStack(spacing: 20) {
-                    // Header
-                    headerView
-                    
-                    // Offline Status Banner
-                    if !offlineService.isOnline {
-                        offlineStatusBanner
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header
+                        //headerView
+                        
+                        // Offline Status Banner
+                        if !offlineService.isOnline {
+                            offlineStatusBanner
+                        }
+                        
+                        // Scanner Frame
+                        scannerFrameView
+                        
+                        // Instructions
+                        instructionsView
+                        
+                        // Event Selection
+                        eventSelectionView
+                        
+                        // Action Buttons
+                        actionButtonsView
+                        
+                        // Recent Check-ins
+                        recentCheckinsView
                     }
-                    
-                    // Scanner Frame
-                    scannerFrameView
-                    
-                    // Instructions
-                    instructionsView
-                    
-                    // Event Selection
-                    eventSelectionView
-                    
-                    // Action Buttons
-                    actionButtonsView
-                    
-                    Spacer()
-                    
-                    // Recent Check-ins
-                    recentCheckinsView
+                    .padding()
                 }
-                .padding()
+                .safeAreaInset(edge: .top) {
+                    // Tạo khoảng trống chính xác cho status bar + 10pt
+                    Spacer()
+                        .frame(height: 10)
+                        .background(Color(.systemBackground))
+                }
                 
                 // Loading Overlay
                 if viewModel.isLoading || viewModel.processingCheckin {
                     loadingOverlay
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarHidden(true)
             .onAppear {
                 viewModel.scannerService.startScanning()
@@ -70,42 +77,23 @@ struct ScannerView: View {
         }
     }
     
+    /*
     // MARK: - Header
     private var headerView: some View {
         HStack {
-            HStack {
-                Image(systemName: "qrcode")
-                    .foregroundColor(.blue)
-                    .font(.title2)
-                Text("QR Scanner")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-            }
+            Image(systemName: "barcode.viewfinder")
+                .font(.largeTitle)
+                .foregroundColor(.primary)
+            
+            Text("QR Check-in")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
             
             Spacer()
-            
-            HStack(spacing: 16) {
-                NavigationLink(destination: DashboardView()) {
-                    Image(systemName: "chart.bar")
-                        .foregroundColor(.gray)
-                }
-                
-                Button(action: {
-                    viewModel.refresh()
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.gray)
-                }
-                
-                Text("Staff App")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
         }
-        .padding(.horizontal)
     }
-    
+    */
     // MARK: - Offline Status Banner
     private var offlineStatusBanner: some View {
         HStack {
@@ -139,14 +127,19 @@ struct ScannerView: View {
     // MARK: - Scanner Frame
     private var scannerFrameView: some View {
         ZStack {
-            // Camera Preview
-            CameraPreviewView(scannerService: viewModel.scannerService)
+            // Khung bao bên ngoài
+            RoundedRectangle(cornerRadius: Constants.UI.cornerRadius)
+                .fill(Color.black)
                 .frame(width: Constants.UI.scannerFrameSize, height: Constants.UI.scannerFrameSize)
-                .clipShape(RoundedRectangle(cornerRadius: Constants.UI.cornerRadius))
             
-            // Scanner Overlay
+            // Camera Preview với padding 5pt
+            CameraPreviewView(scannerService: viewModel.scannerService)
+                .frame(width: Constants.UI.scannerFrameSize - 10, height: Constants.UI.scannerFrameSize - 10)
+                .clipShape(RoundedRectangle(cornerRadius: Constants.UI.cornerRadius - 5))
+            
+            // Scanner Overlay với padding 5pt
             ScannerOverlayView()
-                .frame(width: Constants.UI.scannerFrameSize, height: Constants.UI.scannerFrameSize)
+                .frame(width: Constants.UI.scannerFrameSize - 10, height: Constants.UI.scannerFrameSize - 10)
         }
     }
     
@@ -156,7 +149,7 @@ struct ScannerView: View {
             Text("Scan Member QR Code")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             Text("Align the QR code within the frame to check-in/check-out")
                 .font(.caption)
@@ -188,7 +181,7 @@ struct ScannerView: View {
             } label: {
                 HStack {
                     Text(viewModel.selectedEvent?.name ?? "Select Event")
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Spacer()
                     Image(systemName: "chevron.down")
                         .foregroundColor(.gray)
@@ -239,7 +232,7 @@ struct ScannerView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Recent Activity")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             if viewModel.recentCheckins.isEmpty {
                 Text("No recent activity")

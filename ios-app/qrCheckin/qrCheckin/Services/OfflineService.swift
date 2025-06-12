@@ -29,6 +29,7 @@ class OfflineService: ObservableObject {
     
     @Published var isOnline = true
     @Published var offlineQueue: [OfflineCheckinItem] = []
+    @Published var enableOfflineMode = true // Add this property for settings
     
     private let graphQLService = GraphQLService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -95,7 +96,7 @@ class OfflineService: ObservableObject {
             graphQLService.performCheckin(qrCode: item.qrCode, eventId: item.eventId, type: item.type)
                 .sink(
                     receiveCompletion: { [weak self] completion in
-                        if case .success = completion {
+                        if case .finished = completion {
                             self?.removeFromQueue(item)
                         }
                     },
@@ -128,6 +129,14 @@ class OfflineService: ObservableObject {
     func clearOfflineQueue() {
         offlineQueue.removeAll()
         saveOfflineQueue()
+    }
+    
+    func clearOfflineData() {
+        clearOfflineQueue()
+    }
+    
+    func syncOfflineData() {
+        syncOfflineQueue()
     }
     
     func getQueuedItemsCount() -> Int {

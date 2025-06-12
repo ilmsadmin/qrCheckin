@@ -22,9 +22,11 @@ class DashboardViewModel: ObservableObject {
     @Published var recentActivity: [CheckinLog] = []
     @Published var todayStats: DashboardStats = .empty
     @Published var isLoading = false
-    @Published var error: AppError?
+    @Published var error: Error?
+    @Published var clubs: [Club] = []
+    @Published var selectedClub: Club?
     
-    private let graphQLService = GraphQLService.shared
+    private let mockDataService = MockDataService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -35,16 +37,39 @@ class DashboardViewModel: ObservableObject {
         loadActiveEvents()
         loadRecentActivity()
         loadTodayStats()
+        loadClubs()
     }
     
     func refresh() {
         loadData()
     }
     
+    private func loadClubs() {
+        isLoading = true
+        
+        mockDataService.getClubs()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.error = error
+                    }
+                    self?.isLoading = false
+                },
+                receiveValue: { [weak self] clubs in
+                    self?.clubs = clubs
+                    if self?.selectedClub == nil && !clubs.isEmpty {
+                        self?.selectedClub = clubs.first
+                    }
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
     private func loadActiveEvents() {
         isLoading = true
         
-        graphQLService.fetchEvents()
+        mockDataService.getEvents()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -71,10 +96,10 @@ class DashboardViewModel: ObservableObject {
     }
     
     private func loadRecentActivity() {
-        graphQLService.fetchRecentCheckins(limit: 10)
+        mockDataService.getCheckinLogs()
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] completion in
+                receiveCompletion: { completion in
                     if case .failure(let error) = completion {
                         print("Failed to load recent activity: \(error.localizedDescription)")
                     }
@@ -104,5 +129,41 @@ class DashboardViewModel: ObservableObject {
             checkouts: checkouts,
             activeUsers: max(0, checkins - checkouts)
         )
+    }
+    
+    // MARK: - Filtering Methods
+    func filterEventsByClub(clubId: String?) {
+        if let clubId = clubId {
+            // Filter events to show only those from the selected club
+            mockDataService.getEvents()
+                .receive(on: DispatchQueue.main)
+                .sink(
+                    receiveCompletion: { [weak self] completion in
+                        if case .failure(let error) = completion {
+                            self?.error = error
+                        }
+                    },
+                    receiveValue: { [weak self] events in
+                        let now = Date()
+                        let today = Calendar.current.startOfDay(for: now)
+                        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+                        
+                        self?.activeEvents = events.filter { event in
+                            event.isActive && 
+                            event.clubId == clubId &&
+                            (event.isOngoing || (event.startTime >= today && event.startTime < tomorrow))
+                        }.sorted { $0.startTime < $1.startTime }
+                    }
+                )
+                .store(in: &cancellables)
+        } else {
+            // Show all events if no club is selected
+            loadActiveEvents()
+        }
+    }
+    
+    func clearClubFilter() {
+        selectedClub = nil
+        loadActiveEvents()
     }
 }

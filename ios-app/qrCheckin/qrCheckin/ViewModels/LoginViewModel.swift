@@ -8,6 +8,8 @@
 import Foundation
 import Combine
 
+// Note: AppError and Constants are defined in Constants.swift
+
 @MainActor
 class LoginViewModel: ObservableObject {
     @Published var isLoading = false
@@ -31,16 +33,16 @@ class LoginViewModel: ObservableObject {
         
         isLoading = true
         
-        graphQLService.login(email: email, password: password)
+        MockDataService.shared.mockLogin(email: email, password: password)
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] completion in
+                receiveCompletion: { [weak self] (completion: Subscribers.Completion<Error>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
                         self?.showError(error.localizedDescription)
                     }
                 },
-                receiveValue: { [weak self] user in
+                receiveValue: { [weak self] (user: User) in
                     self?.currentUser = user
                     self?.isLoggedIn = true
                     self?.saveUserData(user)
@@ -55,7 +57,7 @@ class LoginViewModel: ObservableObject {
         graphQLService.logout()
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] completion in
+                receiveCompletion: { [weak self] (completion: Subscribers.Completion<AppError>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
                         print("Logout error: \(error.localizedDescription)")
@@ -63,7 +65,7 @@ class LoginViewModel: ObservableObject {
                     // Logout locally even if server request fails
                     self?.performLocalLogout()
                 },
-                receiveValue: { [weak self] _ in
+                receiveValue: { [weak self] (_: Bool) in
                     self?.performLocalLogout()
                 }
             )

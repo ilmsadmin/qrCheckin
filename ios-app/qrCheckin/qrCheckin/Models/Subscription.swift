@@ -15,48 +15,9 @@ enum SubscriptionType: String, CaseIterable, Codable {
     case eventSpecific = "EVENT_SPECIFIC"
 }
 
-struct SubscriptionPackage: Identifiable, Codable {
-    let id: String
-    let name: String
-    let description: String?
-    let clubId: String
-    let type: SubscriptionType
-    let price: Double
-    let discountPrice: Double?
-    let features: [String]
-    let checkinLimit: Int?
-    let isPopular: Bool
-    let sortOrder: Int
-    let isActive: Bool
-    let createdAt: Date
-    let updatedAt: Date
-    
-    var displayPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "VND"
-        formatter.minimumFractionDigits = 0
-        
-        if let discount = discountPrice {
-            return formatter.string(from: NSNumber(value: discount)) ?? "₫\(Int(discount))"
-        } else {
-            return formatter.string(from: NSNumber(value: price)) ?? "₫\(Int(price))"
-        }
-    }
-    
-    var originalPriceString: String? {
-        guard let _ = discountPrice else { return nil }
-        
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "VND"
-        formatter.minimumFractionDigits = 0
-        
-        return formatter.string(from: NSNumber(value: price)) ?? "₫\(Int(price))"
-    }
-}
+// SubscriptionPackage is defined in its own file
 
-struct Subscription: Identifiable, Codable {
+struct Subscription: Identifiable {
     let id: String
     let userId: String
     let clubId: String
@@ -85,5 +46,58 @@ struct Subscription: Identifiable, Codable {
     var daysRemaining: Int {
         let days = Calendar.current.dateComponents([.day], from: Date(), to: endDate).day ?? 0
         return max(0, days)
+    }
+}
+
+// MARK: - Codable Extension
+extension Subscription: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId
+        case clubId
+        case packageId
+        case type
+        case startDate
+        case endDate
+        case isActive
+        case createdAt
+        case updatedAt
+        // Don't include related objects in coding keys
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(String.self, forKey: .id)
+        userId = try container.decode(String.self, forKey: .userId)
+        clubId = try container.decode(String.self, forKey: .clubId)
+        packageId = try container.decode(String.self, forKey: .packageId)
+        type = try container.decode(SubscriptionType.self, forKey: .type)
+        startDate = try container.decode(Date.self, forKey: .startDate)
+        endDate = try container.decode(Date.self, forKey: .endDate)
+        isActive = try container.decode(Bool.self, forKey: .isActive)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        
+        // Related objects are initialized as nil
+        user = nil
+        club = nil
+        package = nil
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(clubId, forKey: .clubId)
+        try container.encode(packageId, forKey: .packageId)
+        try container.encode(type, forKey: .type)
+        try container.encode(startDate, forKey: .startDate)
+        try container.encode(endDate, forKey: .endDate)
+        try container.encode(isActive, forKey: .isActive)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        // Don't encode related objects
     }
 }

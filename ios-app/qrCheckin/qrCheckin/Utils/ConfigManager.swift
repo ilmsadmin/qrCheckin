@@ -43,31 +43,31 @@ class ConfigManager {
     }
     
     // MARK: - Specific Config Values
-    var apiBaseURL: String {
-        return getString("API_BASE_URL", defaultValue: Constants.API.baseURL)
+    var baseURL: String {
+        return getString("API_BASE_URL", defaultValue: "http://localhost:3000")
     }
     
     var graphQLEndpoint: String {
-        return getString("GRAPHQL_ENDPOINT", defaultValue: Constants.API.graphQLEndpoint)
+        return getString("GRAPHQL_ENDPOINT", defaultValue: "http://localhost:3000/graphql")
     }
     
     var wsEndpoint: String {
-        return getString("WS_ENDPOINT", defaultValue: Constants.API.wsEndpoint)
+        return getString("WS_ENDPOINT", defaultValue: "ws://localhost:3000/graphql")
     }
     
     var timeoutInterval: TimeInterval {
-        return TimeInterval(getInt("TIMEOUT_INTERVAL", defaultValue: Int(Constants.API.timeoutInterval)))
+        return TimeInterval(getInt("TIMEOUT_INTERVAL", defaultValue: 30))
     }
     
     var scannerDelay: Double {
-        return getDouble("SCANNER_DELAY", defaultValue: Constants.Scanner.scanDelay)
+        return getDouble("SCANNER_DELAY", defaultValue: 1.0)
     }
     
     var vibrationEnabled: Bool {
-        return getBool("VIBRATION_ENABLED", defaultValue: Constants.Scanner.vibrationEnabled)
+        return getBool("VIBRATION_ENABLED", defaultValue: true)
     }
     
     var soundEnabled: Bool {
-        return getBool("SOUND_ENABLED", defaultValue: Constants.Scanner.soundEnabled)
+        return getBool("SOUND_ENABLED", defaultValue: true)
     }
 }

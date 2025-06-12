@@ -50,6 +50,9 @@ class QRScannerService: NSObject, ObservableObject {
                 self?.cameraPermissionGranted = granted
                 if !granted {
                     self?.error = AppError.scannerError("Camera access is required for QR scanning")
+                } else {
+                    // Permission granted, setup capture session
+                    self?.setupCaptureSession()
                 }
             }
         }
@@ -62,8 +65,16 @@ class QRScannerService: NSObject, ObservableObject {
             return
         }
         
-        setupCaptureSession()
-        isScanning = true
+        if captureSession == nil {
+            setupCaptureSession()
+        }
+        
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            self?.captureSession?.startRunning()
+            DispatchQueue.main.async {
+                self?.isScanning = true
+            }
+        }
     }
     
     func stopScanning() {
@@ -72,40 +83,113 @@ class QRScannerService: NSObject, ObservableObject {
     }
     
     private func setupCaptureSession() {
+        guard captureSession == nil else { return }
+        
         guard let device = AVCaptureDevice.default(for: .video) else {
             error = AppError.scannerError("Failed to access camera")
             return
         }
         
+        // Tạo mới AVCaptureSession
+        let session = AVCaptureSession()
+        self.captureSession = session
+        
+        // Kiểm tra và thiết lập chất lượng nếu có thể
+        if session.canSetSessionPreset(.high) {
+            session.sessionPreset = .high
+        }
+        
         do {
+            // Thiết lập input từ thiết bị camera
             let input = try AVCaptureDeviceInput(device: device)
-            let output = AVCaptureMetadataOutput()
+            if session.canAddInput(input) {
+                session.addInput(input)
+            } else {
+                throw NSError(domain: "QRScanner", code: 1, userInfo: [NSLocalizedDescriptionKey: "Không thể thêm camera input vào session"])
+            }
             
-            captureSession = AVCaptureSession()
-            captureSession?.addInput(input)
-            captureSession?.addOutput(output)
+            // Thiết lập output cho QR scanning
+            let metadataOutput = AVCaptureMetadataOutput()
+            if session.canAddOutput(metadataOutput) {
+                session.addOutput(metadataOutput)
+                
+                // Thiết lập delegate và queue
+                metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+                
+                // Thiết lập loại metadata cần quét (QR code)
+                if metadataOutput.availableMetadataObjectTypes.contains(.qr) {
+                    metadataOutput.metadataObjectTypes = [.qr]
+                } else {
+                    throw NSError(domain: "QRScanner", code: 2, userInfo: [NSLocalizedDescriptionKey: "Thiết bị không hỗ trợ quét mã QR"])
+                }
+            } else {
+                throw NSError(domain: "QRScanner", code: 3, userInfo: [NSLocalizedDescriptionKey: "Không thể thêm metadata output vào session"])
+            }
             
-            output.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
-            output.metadataObjectTypes = [.qr]
+            // Khởi tạo preview layer và thiết lập thuộc tính
+            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer.videoGravity = .resizeAspectFill
+            previewLayer.connection?.videoOrientation = .portrait
+            self.previewLayer = previewLayer
             
-            DispatchQueue.global(qos: .background).async { [weak self] in
-                self?.captureSession?.startRunning()
+            // Không gọi startRunning() tại đây
+            // Thay vào đó, chúng ta sẽ gọi nó trong startScanning()
+            
+            // Đánh dấu là đã cấu hình thành công
+            DispatchQueue.main.async {
+                self.isScanning = true
             }
             
         } catch {
-            self.error = AppError.scannerError("Failed to setup camera: \(error.localizedDescription)")
+            self.captureSession = nil
+            self.previewLayer = nil
+            self.error = AppError.scannerError("Lỗi thiết lập camera: \(error.localizedDescription)")
+            print("Camera setup error: \(error.localizedDescription)")
         }
     }
     
     func getPreviewLayer() -> AVCaptureVideoPreviewLayer? {
-        guard let captureSession = captureSession else { return nil }
-        
-        if previewLayer == nil {
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer?.videoGravity = .resizeAspectFill
+        // Nếu previewLayer đã tồn tại, trả về nó
+        if let existingLayer = previewLayer {
+            return existingLayer
         }
         
-        return previewLayer
+        // Nếu previewLayer chưa tồn tại nhưng captureSession có, tạo mới và trả về
+        if let session = captureSession {
+            print("Creating new preview layer from existing session")
+            let newLayer = AVCaptureVideoPreviewLayer(session: session)
+            newLayer.videoGravity = .resizeAspectFill
+            
+            // Cập nhật orientation tùy theo phiên bản iOS
+            if let connection = newLayer.connection {
+                if #available(iOS 17.0, *) {
+                    if connection.isVideoRotationAngleSupported(0) {
+                        connection.videoRotationAngle = 0
+                      }
+                } else {
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
+                    }
+                }
+            }
+            
+            self.previewLayer = newLayer
+            return newLayer
+        }
+        
+        // Nếu chưa có session, gọi setupCaptureSession để tạo
+        if cameraPermissionGranted {
+            print("No session exists, setting up camera capture session")
+            setupCaptureSession()
+            
+            // Sau khi setup, kiểm tra lại previewLayer
+            if let layer = previewLayer {
+                return layer
+            }
+        }
+        
+        print("Failed to create preview layer: No capture session available")
+        return nil
     }
     
     // MARK: - Manual Code Input (for testing/fallback)

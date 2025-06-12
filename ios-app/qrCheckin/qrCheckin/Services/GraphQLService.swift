@@ -8,6 +8,8 @@
 import Foundation
 import Combine
 
+// Note: AppError is defined in Constants.swift
+
 class GraphQLService: ObservableObject {
     static let shared = GraphQLService()
     

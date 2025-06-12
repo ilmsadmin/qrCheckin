@@ -13,8 +13,23 @@ struct RootView: View {
     var body: some View {
         Group {
             if loginViewModel.isLoggedIn {
-                ScannerView()
-                    .environmentObject(loginViewModel)
+                TabView {
+                    ScannerView()
+                        .tabItem {
+                            Label("Scanner", systemImage: "qrcode.viewfinder")
+                        }
+                    
+                    DashboardView()
+                        .tabItem {
+                            Label("Dashboard", systemImage: "chart.bar")
+                        }
+                    
+                    SettingsView()
+                        .tabItem {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                }
+                .environmentObject(loginViewModel)
             } else {
                 LoginView()
                     .environmentObject(loginViewModel)
