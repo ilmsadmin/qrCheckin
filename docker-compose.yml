@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: qr-checkin-postgres
+    environment:
+      POSTGRES_DB: qr_checkin_db
+      POSTGRES_USER: qr_user
+      POSTGRES_PASSWORD: qr_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - qr-checkin-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: qr-checkin-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - qr-checkin-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qr-checkin-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://qr_user:qr_password@postgres:5432/qr_checkin_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-production-jwt-secret
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - qr-checkin-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qr-checkin-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:4000/graphql
+    depends_on:
+      - backend
+    networks:
+      - qr-checkin-network
+
+volumes:
+  postgres_data:
+
+networks:
+  qr-checkin-network:
+    driver: bridge

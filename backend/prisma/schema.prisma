@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  subscriptions Subscription[]
+  checkinLogs   CheckinLog[]
+  qrCodes       QRCode[]
+
+  @@map("users")
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  events        Event[]
+  subscriptions Subscription[]
+
+  @@map("clubs")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+  maxCapacity Int?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  club        Club         @relation(fields: [clubId], references: [id])
+  clubId      String
+  checkinLogs CheckinLog[]
+
+  @@map("events")
+}
+
+model Subscription {
+  id          String           @id @default(cuid())
+  name        String
+  type        SubscriptionType
+  price       Float
+  duration    Int // days
+  maxCheckins Int?
+  isActive    Boolean          @default(true)
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String
+  club        Club         @relation(fields: [clubId], references: [id])
+  clubId      String
+  qrCodes     QRCode[]
+  checkinLogs CheckinLog[]
+
+  @@map("subscriptions")
+}
+
+model QRCode {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+  checkinLogs    CheckinLog[]
+
+  @@map("qr_codes")
+}
+
+model CheckinLog {
+  id        String      @id @default(cuid())
+  type      CheckinType
+  timestamp DateTime    @default(now())
+  location  String?
+  notes     String?
+
+  // Relations
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  event          Event        @relation(fields: [eventId], references: [id])
+  eventId        String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+  qrCode         QRCode       @relation(fields: [qrCodeId], references: [id])
+  qrCodeId       String
+
+  @@map("checkin_logs")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  USER
+}
+
+enum SubscriptionType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  EVENT_SPECIFIC
+}
+
+enum CheckinType {
+  CHECKIN
+  CHECKOUT
+}
