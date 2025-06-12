@@ -14,5 +14,30 @@ export const GET_EVENT = gql`
   }
 `;
 
-// These mutations would need to be added to the backend if not already available
-// For now, we'll work with the existing event query to display event management
+// Mutation to create a new event
+export const CREATE_EVENT = gql`
+  mutation CreateEvent($input: CreateEventInput!) {
+    createEvent(input: $input)
+  }
+`;
+
+// Mutation to update an event
+export const UPDATE_EVENT = gql`
+  mutation UpdateEvent($id: String!, $input: UpdateEventInput!) {
+    updateEvent(id: $id, input: $input)
+  }
+`;
+
+// Mutation to remove (soft delete) an event
+export const REMOVE_EVENT = gql`
+  mutation RemoveEvent($id: String!) {
+    removeEvent(id: $id)
+  }
+`;
+
+// Mutation to delete (hard delete) an event
+export const DELETE_EVENT = gql`
+  mutation DeleteEvent($id: String!) {
+    deleteEvent(id: $id)
+  }
+`;

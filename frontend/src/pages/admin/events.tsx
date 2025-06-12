@@ -1,10 +1,11 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import Navigation from '../../components/Navigation';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import { GET_ALL_EVENTS } from '../../lib/graphql/events';
+import { GET_ALL_EVENTS, CREATE_EVENT, UPDATE_EVENT, REMOVE_EVENT } from '../../lib/graphql/events';
+import { GET_CLUBS } from '../../lib/graphql/dashboard';
 
 interface Event {
   id: string;
@@ -12,20 +13,46 @@ interface Event {
   description?: string;
   location?: string;
   startTime: string;
-  endTime?: string;
+  endTime: string;
   isActive: boolean;
-  capacity?: number;
+  maxCapacity?: number;
   currentAttendees?: number;
   createdAt: string;
+  club: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Club {
+  id: string;
+  name: string;
+  isActive: boolean;
 }
 
 export default function EventManagement() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    location: '',
+    startTime: '',
+    endTime: '',
+    maxCapacity: '',
+    clubId: ''
+  });
 
   const { data, loading, error, refetch } = useQuery(GET_ALL_EVENTS);
+  const { data: clubsData } = useQuery(GET_CLUBS);
+  const [createEvent, { loading: createLoading }] = useMutation(CREATE_EVENT);
+  const [updateEvent, { loading: updateLoading }] = useMutation(UPDATE_EVENT);
+  const [removeEvent, { loading: removeLoading }] = useMutation(REMOVE_EVENT);
 
   useEffect(() => {
     if (data?.events) {
@@ -40,6 +67,12 @@ export default function EventManagement() {
   }, [data]);
 
   useEffect(() => {
+    if (clubsData?.clubs) {
+      setClubs(clubsData.clubs.filter((club: Club) => club.isActive));
+    }
+  }, [clubsData]);
+
+  useEffect(() => {
     let filtered = events;
 
     // Filter by search term
@@ -47,7 +80,8 @@ export default function EventManagement() {
       filtered = filtered.filter(event =>
         event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.location?.toLowerCase().includes(searchTerm.toLowerCase())
+        event.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.club.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -60,6 +94,99 @@ export default function EventManagement() {
 
     setFilteredEvents(filtered);
   }, [events, searchTerm, filterStatus]);
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      location: '',
+      startTime: '',
+      endTime: '',
+      maxCapacity: '',
+      clubId: ''
+    });
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const input = {
+        name: formData.name,
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
+        clubId: formData.clubId
+      };
+
+      await createEvent({ variables: { input } });
+      resetForm();
+      setShowCreateModal(false);
+      refetch();
+    } catch (error) {
+      console.error('Error creating event:', error);
+    }
+  };
+
+  const handleUpdateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+
+    try {
+      const input = {
+        name: formData.name,
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
+        clubId: formData.clubId
+      };
+
+      await updateEvent({ variables: { id: editingEvent.id, input } });
+      resetForm();
+      setEditingEvent(null);
+      refetch();
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
+  };
+
+  const handleRemoveEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to deactivate this event?')) return;
+
+    try {
+      await removeEvent({ variables: { id: eventId } });
+      refetch();
+    } catch (error) {
+      console.error('Error removing event:', error);
+    }
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (event: Event) => {
+    setEditingEvent(event);
+    setFormData({
+      name: event.name,
+      description: event.description || '',
+      location: event.location || '',
+      startTime: new Date(event.startTime).toISOString().slice(0, 16),
+      endTime: new Date(event.endTime).toISOString().slice(0, 16),
+      maxCapacity: event.maxCapacity?.toString() || '',
+      clubId: event.club.id
+    });
+  };
+
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setEditingEvent(null);
+    resetForm();
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -139,7 +266,10 @@ export default function EventManagement() {
                   >
                     <i className="fas fa-refresh mr-2"></i>Refresh
                   </button>
-                  <button className="bg-blue-600 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                  <button 
+                    onClick={() => openCreateModal()}
+                    className="bg-blue-600 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
+                  >
                     <i className="fas fa-plus mr-2"></i>Create Event
                   </button>
                 </div>
@@ -247,14 +377,14 @@ export default function EventManagement() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {event.capacity ? (
+                              {event.maxCapacity ? (
                                 <div>
-                                  <div>{event.currentAttendees || 0} / {event.capacity}</div>
+                                  <div>{event.currentAttendees || 0} / {event.maxCapacity}</div>
                                   <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                                     <div 
                                       className="bg-blue-600 h-2 rounded-full" 
                                       style={{ 
-                                        width: `${Math.min(((event.currentAttendees || 0) / event.capacity) * 100, 100)}%` 
+                                        width: `${Math.min(((event.currentAttendees || 0) / event.maxCapacity) * 100, 100)}%` 
                                       }}
                                     ></div>
                                   </div>
@@ -274,13 +404,21 @@ export default function EventManagement() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex space-x-2">
-                                <button className="text-blue-600 hover:text-blue-900">
-                                  <i className="fas fa-eye"></i>
-                                </button>
-                                <button className="text-green-600 hover:text-green-900">
+                                <button 
+                                  onClick={() => openEditModal(event)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                  title="Edit event"
+                                >
                                   <i className="fas fa-edit"></i>
                                 </button>
-                                <button className="text-red-600 hover:text-red-900">
+                                <button className="text-green-600 hover:text-green-900" title="View details">
+                                  <i className="fas fa-eye"></i>
+                                </button>
+                                <button 
+                                  onClick={() => handleRemoveEvent(event.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Deactivate event"
+                                >
                                   <i className="fas fa-trash"></i>
                                 </button>
                               </div>
@@ -295,6 +433,266 @@ export default function EventManagement() {
             </div>
           </div>
         </div>
+
+        {/* Create Event Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Event</h3>
+                <form onSubmit={handleCreateEvent}>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Event Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="club" className="block text-sm font-medium text-gray-700 mb-2">
+                        Club *
+                      </label>
+                      <select
+                        id="club"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.clubId}
+                        onChange={(e) => setFormData({ ...formData, clubId: e.target.value })}
+                      >
+                        <option value="">Select a club</option>
+                        {clubs.map((club) => (
+                          <option key={club.id} value={club.id}>
+                            {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="startTime"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
+                        End Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="endTime"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.endTime}
+                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        id="location"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="maxCapacity" className="block text-sm font-medium text-gray-700 mb-2">
+                        Max Capacity
+                      </label>
+                      <input
+                        type="number"
+                        id="maxCapacity"
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.maxCapacity}
+                        onChange={(e) => setFormData({ ...formData, maxCapacity: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createLoading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {createLoading ? 'Creating...' : 'Create Event'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Event Modal */}
+        {editingEvent && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Event</h3>
+                <form onSubmit={handleUpdateEvent}>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Event Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="edit-name"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-club" className="block text-sm font-medium text-gray-700 mb-2">
+                        Club *
+                      </label>
+                      <select
+                        id="edit-club"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.clubId}
+                        onChange={(e) => setFormData({ ...formData, clubId: e.target.value })}
+                      >
+                        <option value="">Select a club</option>
+                        {clubs.map((club) => (
+                          <option key={club.id} value={club.id}>
+                            {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      id="edit-description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-startTime" className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="edit-startTime"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-endTime" className="block text-sm font-medium text-gray-700 mb-2">
+                        End Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        id="edit-endTime"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.endTime}
+                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-location" className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        id="edit-location"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-maxCapacity" className="block text-sm font-medium text-gray-700 mb-2">
+                        Max Capacity
+                      </label>
+                      <input
+                        type="number"
+                        id="edit-maxCapacity"
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.maxCapacity}
+                        onChange={(e) => setFormData({ ...formData, maxCapacity: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={updateLoading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {updateLoading ? 'Updating...' : 'Update Event'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     </ProtectedRoute>
   );
