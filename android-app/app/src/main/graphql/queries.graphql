@@ -1,0 +1,50 @@
+query GetEvents {
+  events {
+    id
+    name
+    description
+    startTime
+    endTime
+    location
+    maxCapacity
+    isActive
+    clubId
+  }
+}
+
+query GetCheckinLogs($userId: ID, $eventId: ID) {
+  checkinLogs(userId: $userId, eventId: $eventId) {
+    id
+    type
+    timestamp
+    location
+    notes
+    userId
+    eventId
+    subscriptionId
+    qrCodeId
+    user {
+      id
+      firstName
+      lastName
+      email
+    }
+    event {
+      id
+      name
+      location
+    }
+  }
+}
+
+query GetCurrentUser {
+  me {
+    id
+    email
+    username
+    firstName
+    lastName
+    role
+    isActive
+  }
+}

@@ -1,0 +1,75 @@
+# GraphQL Schema for QR Check-in System
+
+type User {
+  id: ID!
+  email: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+  role: Role!
+  isActive: Boolean!
+}
+
+type Event {
+  id: ID!
+  name: String!
+  description: String
+  startTime: String!
+  endTime: String!
+  location: String
+  maxCapacity: Int
+  isActive: Boolean!
+  clubId: ID!
+}
+
+type CheckinLog {
+  id: ID!
+  type: CheckinType!
+  timestamp: String!
+  location: String
+  notes: String
+  userId: ID!
+  eventId: ID!
+  subscriptionId: ID!
+  qrCodeId: ID!
+  user: User
+  event: Event
+}
+
+type QRCode {
+  id: ID!
+  code: String!
+  isActive: Boolean!
+  userId: ID!
+  subscriptionId: ID!
+}
+
+type AuthResponse {
+  accessToken: String!
+  user: User!
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  USER
+}
+
+enum CheckinType {
+  CHECKIN
+  CHECKOUT
+}
+
+type Query {
+  me: User
+  events: [Event!]!
+  checkinLogs(userId: ID, eventId: ID): [CheckinLog!]!
+}
+
+type Mutation {
+  login(email: String!, password: String!): AuthResponse!
+  logout: String!
+  checkin(qrCodeId: ID!, eventId: ID!): CheckinLog!
+  checkout(qrCodeId: ID!, eventId: ID!): CheckinLog!
+  scanQRCode(code: String!): QRCode!
+}
