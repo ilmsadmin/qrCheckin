@@ -16,10 +16,12 @@ struct CheckinLog: Identifiable, Codable {
     let id: String
     let userId: String
     let eventId: String
+    let subscriptionId: String?
     let qrCodeId: String?
     let type: CheckinType
     let timestamp: Date
-    let createdAt: Date?
+    let location: String?
+    let notes: String?
     
     // Related data (populated when fetched with relations)
     var user: User?
@@ -31,20 +33,24 @@ struct CheckinLog: Identifiable, Codable {
         self.eventId = eventId
         self.userId = userId
         self.timestamp = timestamp
+        self.subscriptionId = nil
         self.qrCodeId = nil
         self.type = status == "CHECKED_IN" ? .checkin : .checkout
-        self.createdAt = nil
+        self.location = nil
+        self.notes = nil
     }
     
     // Add a custom initializer for CheckinLog that includes all needed properties
-    init(id: String, userId: String, eventId: String, qrCodeId: String?, type: CheckinType, timestamp: Date, createdAt: Date?, user: User? = nil, event: Event? = nil) {
+    init(id: String, userId: String, eventId: String, subscriptionId: String? = nil, qrCodeId: String?, type: CheckinType, timestamp: Date, location: String? = nil, notes: String? = nil, user: User? = nil, event: Event? = nil) {
         self.id = id
         self.userId = userId
         self.eventId = eventId
+        self.subscriptionId = subscriptionId
         self.qrCodeId = qrCodeId
         self.type = type
         self.timestamp = timestamp
-        self.createdAt = createdAt
+        self.location = location
+        self.notes = notes
         self.user = user
         self.event = event
     }

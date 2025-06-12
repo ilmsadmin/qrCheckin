@@ -31,15 +31,21 @@ class LoginViewModel: ObservableObject {
             return
         }
         
+        // Validate email format
+        guard email.contains("@") && email.contains(".") else {
+            showError("Please enter a valid email address")
+            return
+        }
+        
         isLoading = true
         
-        MockDataService.shared.mockLogin(email: email, password: password)
+        graphQLService.login(email: email, password: password)
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] (completion: Subscribers.Completion<Error>) in
+                receiveCompletion: { [weak self] (completion: Subscribers.Completion<AppError>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
-                        self?.showError(error.localizedDescription)
+                        self?.handleAuthenticationError(error)
                     }
                 },
                 receiveValue: { [weak self] (user: User) in
@@ -82,9 +88,30 @@ class LoginViewModel: ObservableObject {
         // Check if user has existing valid token
         if let token = KeychainHelper.shared.load(forKey: Constants.Auth.tokenKey),
            !token.isEmpty {
-            // TODO: Validate token with server
-            // For now, assume token is valid if it exists
+            // First load cached user data for faster startup
             loadUserData()
+            
+            // Then validate token with server
+            graphQLService.getCurrentUser()
+                .receive(on: DispatchQueue.main)
+                .sink(
+                    receiveCompletion: { [weak self] completion in
+                        if case .failure(let error) = completion {
+                            // Token is invalid, clear it and cached data
+                            print("Token validation failed: \(error.localizedDescription)")
+                            self?.clearUserData()
+                            self?.currentUser = nil
+                            self?.isLoggedIn = false
+                        }
+                    },
+                    receiveValue: { [weak self] user in
+                        // Token is valid, update user session with fresh data
+                        self?.currentUser = user
+                        self?.isLoggedIn = true
+                        self?.saveUserData(user)
+                    }
+                )
+                .store(in: &cancellables)
         }
     }
     
@@ -111,5 +138,22 @@ class LoginViewModel: ObservableObject {
     private func showError(_ message: String) {
         alertMessage = message
         showAlert = true
+    }
+    
+    private func handleAuthenticationError(_ error: AppError) {
+        switch error {
+        case .networkError(let message):
+            if message.contains("Invalid credentials") || message.contains("Unauthorized") {
+                showError("Invalid email or password. Please try again.")
+            } else if message.contains("not found") {
+                showError("Network connection error. Please check your internet connection.")
+            } else {
+                showError("Login failed: \(message)")
+            }
+        case .authenticationError(let message):
+            showError("Authentication failed: \(message)")
+        default:
+            showError("Login failed. Please try again.")
+        }
     }
 }

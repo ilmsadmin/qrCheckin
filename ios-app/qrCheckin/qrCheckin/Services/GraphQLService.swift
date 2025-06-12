@@ -31,6 +31,7 @@ class GraphQLService: ObservableObject {
         let query = """
         mutation Login($input: LoginInput!) {
             login(input: $input) {
+                access_token
                 user {
                     id
                     email
@@ -42,7 +43,6 @@ class GraphQLService: ObservableObject {
                     createdAt
                     updatedAt
                 }
-                token
             }
         }
         """
@@ -57,8 +57,8 @@ class GraphQLService: ObservableObject {
         return performQuery(query: query, variables: variables)
             .tryMap { (data: LoginResponse) in
                 // Store token for future requests
-                KeychainHelper.shared.save(data.token, forKey: Constants.Auth.tokenKey)
-                return data.user
+                KeychainHelper.shared.save(data.login.access_token, forKey: Constants.Auth.tokenKey)
+                return data.login.user
             }
             .mapError { error in
                 if error is AppError {
@@ -85,109 +85,174 @@ class GraphQLService: ObservableObject {
             .eraseToAnyPublisher()
     }
     
-    // MARK: - Events
-    func fetchEvents(clubId: String? = nil) -> AnyPublisher<[Event], AppError> {
+    func getCurrentUser() -> AnyPublisher<User, AppError> {
         let query = """
-        query Events($clubId: ID) {
-            events(clubId: $clubId) {
+        query Me {
+            me {
                 id
-                name
-                description
-                startTime
-                endTime
-                location
-                maxCapacity
+                email
+                username
+                firstName
+                lastName
+                role
                 isActive
-                clubId
                 createdAt
                 updatedAt
             }
         }
         """
         
-        let variables: [String: Any] = clubId != nil ? ["clubId": clubId!] : [:]
+        return performQuery(query: query, variables: [:])
+            .map { (data: CurrentUserResponse) in data.me }
+            .eraseToAnyPublisher()
+    }
+    
+    // MARK: - Events
+    func fetchEvents(clubId: String? = nil) -> AnyPublisher<[Event], AppError> {
+        let query = """
+        query Events {
+            events
+        }
+        """
         
-        return performQuery(query: query, variables: variables)
-            .map { (data: EventsResponse) in data.events }
+        return performQuery(query: query, variables: [:])
+            .tryMap { (data: EventsStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.events.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let events = try JSONDecoder.graphQLDecoder.decode([Event].self, from: jsonData)
+                return events
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch events: \(error.localizedDescription)")
+            }
             .eraseToAnyPublisher()
     }
     
     // MARK: - Check-in Operations
-    func performCheckin(qrCode: String, eventId: String, type: CheckinType) -> AnyPublisher<CheckinLog, AppError> {
+    func performCheckin(qrCodeId: String, eventId: String) -> AnyPublisher<CheckinLog, AppError> {
         let mutation = """
-        mutation ProcessCheckin($input: CheckinInput!) {
-            processCheckin(input: $input) {
-                id
-                userId
-                eventId
-                qrCodeId
-                type
-                timestamp
-                createdAt
-                user {
-                    id
-                    username
-                    firstName
-                    lastName
-                }
-                event {
-                    id
-                    name
-                    location
-                }
-            }
+        mutation Checkin($qrCodeId: String!, $eventId: String!) {
+            checkin(qrCodeId: $qrCodeId, eventId: $eventId)
         }
         """
         
         let variables: [String: Any] = [
-            "input": [
-                "qrCode": qrCode,
-                "eventId": eventId,
-                "type": type.rawValue
-            ]
+            "qrCodeId": qrCodeId,
+            "eventId": eventId
         ]
         
         return performQuery(query: mutation, variables: variables)
-            .map { (data: CheckinResponse) in data.processCheckin }
+            .tryMap { (data: CheckinStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.checkin.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let checkinLog = try JSONDecoder.graphQLDecoder.decode(CheckinLog.self, from: jsonData)
+                return checkinLog
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Checkin failed: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func performCheckout(qrCodeId: String, eventId: String) -> AnyPublisher<CheckinLog, AppError> {
+        let mutation = """
+        mutation Checkout($qrCodeId: String!, $eventId: String!) {
+            checkout(qrCodeId: $qrCodeId, eventId: $eventId)
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "qrCodeId": qrCodeId,
+            "eventId": eventId
+        ]
+        
+        return performQuery(query: mutation, variables: variables)
+            .tryMap { (data: CheckoutStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.checkout.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let checkinLog = try JSONDecoder.graphQLDecoder.decode(CheckinLog.self, from: jsonData)
+                return checkinLog
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Checkout failed: \(error.localizedDescription)")
+            }
             .eraseToAnyPublisher()
     }
     
     // MARK: - Recent Check-ins
-    func fetchRecentCheckins(limit: Int = 10) -> AnyPublisher<[CheckinLog], AppError> {
+    func fetchRecentCheckins(limit: Int = 10, userId: String? = nil, eventId: String? = nil) -> AnyPublisher<[CheckinLog], AppError> {
         let query = """
-        query RecentCheckins($limit: Int) {
-            recentCheckins(limit: $limit) {
+        query CheckinLogs($userId: String, $eventId: String) {
+            checkinLogs(userId: $userId, eventId: $eventId)
+        }
+        """
+        
+        var variables: [String: Any] = [:]
+        if let userId = userId {
+            variables["userId"] = userId
+        }
+        if let eventId = eventId {
+            variables["eventId"] = eventId
+        }
+        
+        return performQuery(query: query, variables: variables)
+            .tryMap { (data: CheckinLogsStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.checkinLogs.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let checkinLogs = try JSONDecoder.graphQLDecoder.decode([CheckinLog].self, from: jsonData)
+                // Apply limit on client side since backend doesn't support it
+                return Array(checkinLogs.prefix(limit))
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch checkin logs: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    // MARK: - Clubs
+    func fetchClubs() -> AnyPublisher<[Club], AppError> {
+        let query = """
+        query Clubs {
+            clubs {
                 id
-                userId
-                eventId
-                type
-                timestamp
-                user {
-                    id
-                    username
-                    firstName
-                    lastName
-                }
-                event {
-                    id
-                    name
-                    location
-                }
+                name
+                description
+                isActive
+                createdAt
+                updatedAt
             }
         }
         """
         
-        let variables: [String: Any] = ["limit": limit]
-        
-        return performQuery(query: query, variables: variables)
-            .map { (data: RecentCheckinsResponse) in data.recentCheckins }
+        return performQuery(query: query, variables: [:])
+            .map { (data: ClubsResponse) in data.clubs }
             .eraseToAnyPublisher()
     }
     
     // MARK: - Generic Query Execution
     private func performQuery<T: Codable>(query: String, variables: [String: Any]) -> AnyPublisher<T, AppError> {
         guard let url = URL(string: Constants.API.graphQLEndpoint) else {
-            return Fail(error: AppError.networkError("Invalid API endpoint"))
+            return Fail(error: AppError.networkError("Invalid API endpoint: \(Constants.API.graphQLEndpoint)"))
                 .eraseToAnyPublisher()
         }
         
@@ -217,10 +282,11 @@ class GraphQLService: ObservableObject {
             .decode(type: GraphQLResponse<T>.self, decoder: JSONDecoder.graphQLDecoder)
             .tryMap { response in
                 if let errors = response.errors, !errors.isEmpty {
-                    throw AppError.networkError(errors.first?.message ?? "GraphQL error")
+                    let errorMessage = errors.first?.message ?? "GraphQL error"
+                    throw AppError.networkError("Server error: \(errorMessage)")
                 }
                 guard let data = response.data else {
-                    throw AppError.dataError("No data received")
+                    throw AppError.dataError("No data received from server")
                 }
                 return data
             }
@@ -228,7 +294,22 @@ class GraphQLService: ObservableObject {
                 if error is AppError {
                     return error as! AppError
                 }
-                return AppError.networkError(error.localizedDescription)
+                // Check for specific network errors
+                if let urlError = error as? URLError {
+                    switch urlError.code {
+                    case .notConnectedToInternet:
+                        return AppError.networkError("No internet connection")
+                    case .timedOut:
+                        return AppError.networkError("Request timed out. Please check your connection.")
+                    case .cannotConnectToHost:
+                        return AppError.networkError("Cannot connect to server. Please check if the server is running.")
+                    case .networkConnectionLost:
+                        return AppError.networkError("Network connection lost")
+                    default:
+                        return AppError.networkError("Network error: \(urlError.localizedDescription)")
+                    }
+                }
+                return AppError.networkError("Unknown error: \(error.localizedDescription)")
             }
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
@@ -253,31 +334,83 @@ private struct GraphQLError: Codable {
 }
 
 private struct LoginResponse: Codable {
-    let user: User
-    let token: String
+    let login: LoginData
+    
+    struct LoginData: Codable {
+        let user: User
+        let access_token: String
+    }
+}
+
+private struct CurrentUserResponse: Codable {
+    let me: User
 }
 
 private struct LogoutResponse: Codable {
-    let logout: Bool
+    let logout: String
 }
 
-private struct EventsResponse: Codable {
-    let events: [Event]
+private struct EventsStringResponse: Codable {
+    let events: String
 }
 
-private struct CheckinResponse: Codable {
-    let processCheckin: CheckinLog
+private struct CheckinStringResponse: Codable {
+    let checkin: String
 }
 
-private struct RecentCheckinsResponse: Codable {
-    let recentCheckins: [CheckinLog]
+private struct CheckoutStringResponse: Codable {
+    let checkout: String
+}
+
+private struct CheckinLogsStringResponse: Codable {
+    let checkinLogs: String
+}
+
+private struct ClubsResponse: Codable {
+    let clubs: [Club]
 }
 
 // MARK: - JSONDecoder Extension
 extension JSONDecoder {
     static var graphQLDecoder: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        
+        // Use ISO8601DateFormatter which handles fractional seconds better
+        if #available(iOS 10.0, *) {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let dateString = try container.decode(String.self)
+                
+                // First try with fractional seconds
+                if let date = formatter.date(from: dateString) {
+                    return date
+                }
+                
+                // Fallback: try without fractional seconds
+                formatter.formatOptions = [.withInternetDateTime]
+                if let date = formatter.date(from: dateString) {
+                    return date
+                }
+                
+                // Last resort: manual parsing
+                let fallbackFormatter = DateFormatter()
+                fallbackFormatter.locale = Locale(identifier: "en_US_POSIX")
+                fallbackFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                fallbackFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+                
+                if let date = fallbackFormatter.date(from: dateString) {
+                    return date
+                }
+                
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot parse date: \(dateString)")
+            }
+        } else {
+            // Fallback for older iOS versions
+            decoder.dateDecodingStrategy = .iso8601
+        }
+        
         decoder.keyDecodingStrategy = .useDefaultKeys
         return decoder
     }

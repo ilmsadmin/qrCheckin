@@ -61,15 +61,6 @@ struct LoginView: View {
                         .cornerRadius(Constants.UI.cornerRadius)
                     }
                     .disabled(email.isEmpty || password.isEmpty || viewModel.isLoading)
-                    
-                    // Test login button (for development)
-                    Button(action: {
-                        viewModel.isLoggedIn = true
-                    }) {
-                        Text("Skip Login (Test)")
-                            .foregroundColor(.blue)
-                            .padding()
-                    }
                 }
                 
                 Spacer()

@@ -93,7 +93,14 @@ class OfflineService: ObservableObject {
         let items = offlineQueue
         
         for item in items {
-            graphQLService.performCheckin(qrCode: item.qrCode, eventId: item.eventId, type: item.type)
+            let apiCall: AnyPublisher<CheckinLog, AppError>
+            if item.type == .checkin {
+                apiCall = graphQLService.performCheckin(qrCodeId: item.qrCode, eventId: item.eventId)
+            } else {
+                apiCall = graphQLService.performCheckout(qrCodeId: item.qrCode, eventId: item.eventId)
+            }
+            
+            apiCall
                 .sink(
                     receiveCompletion: { [weak self] completion in
                         if case .finished = completion {

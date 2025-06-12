@@ -26,7 +26,7 @@ class DashboardViewModel: ObservableObject {
     @Published var clubs: [Club] = []
     @Published var selectedClub: Club?
     
-    private let mockDataService = MockDataService.shared
+    private let graphQLService = GraphQLService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -47,7 +47,7 @@ class DashboardViewModel: ObservableObject {
     private func loadClubs() {
         isLoading = true
         
-        mockDataService.getClubs()
+        graphQLService.fetchClubs()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -57,7 +57,7 @@ class DashboardViewModel: ObservableObject {
                     self?.isLoading = false
                 },
                 receiveValue: { [weak self] clubs in
-                    self?.clubs = clubs
+                    self?.clubs = clubs.filter { $0.isActive }
                     if self?.selectedClub == nil && !clubs.isEmpty {
                         self?.selectedClub = clubs.first
                     }
@@ -69,7 +69,7 @@ class DashboardViewModel: ObservableObject {
     private func loadActiveEvents() {
         isLoading = true
         
-        mockDataService.getEvents()
+        graphQLService.fetchEvents()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -96,7 +96,7 @@ class DashboardViewModel: ObservableObject {
     }
     
     private func loadRecentActivity() {
-        mockDataService.getCheckinLogs()
+        graphQLService.fetchRecentCheckins(limit: 10)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { completion in
@@ -135,7 +135,7 @@ class DashboardViewModel: ObservableObject {
     func filterEventsByClub(clubId: String?) {
         if let clubId = clubId {
             // Filter events to show only those from the selected club
-            mockDataService.getEvents()
+            graphQLService.fetchEvents()
                 .receive(on: DispatchQueue.main)
                 .sink(
                     receiveCompletion: { [weak self] completion in

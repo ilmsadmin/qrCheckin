@@ -26,7 +26,7 @@ class ScannerViewModel: ObservableObject {
     @Published var lastScannedCode = ""
     @Published var processingCheckin = false
     
-    private let mockDataService = MockDataService.shared
+    private let graphQLService = GraphQLService.shared
     let scannerService = QRScannerService()
     private let offlineService = OfflineService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -64,17 +64,13 @@ class ScannerViewModel: ObservableObject {
     func loadEvents() {
         isLoading = true
         
-        mockDataService.getEvents()
+        graphQLService.fetchEvents()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
-                        if let appError = error as? AppError {
-                            self?.showError(appError)
-                        } else {
-                            self?.showError(AppError.unknownError)
-                        }
+                        self?.showError(error)
                     }
                 },
                 receiveValue: { [weak self] events in
@@ -90,7 +86,7 @@ class ScannerViewModel: ObservableObject {
     }
     
     func loadRecentCheckins() {
-        mockDataService.getCheckinLogs()
+        graphQLService.fetchRecentCheckins(limit: 10)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { completion in
@@ -159,34 +155,30 @@ class ScannerViewModel: ObservableObject {
             return
         }
         
-        // Simulate API call with mock data
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self, let selectedEvent = self.selectedEvent else { return }
-            let mockCheckin = CheckinLog(
-                id: "checkin_\(UUID().uuidString)",
-                userId: "user_001",
-                eventId: selectedEvent.id,
-                qrCodeId: code,
-                type: type,
-                timestamp: Date(),
-                createdAt: Date(),
-                user: User(
-                    id: "user_001",
-                    email: "john.doe@example.com",
-                    username: "johndoe",
-                    firstName: "John",
-                    lastName: "Doe",
-                    role: .user,
-                    isActive: true,
-                    createdAt: Date(),
-                    updatedAt: Date()
-                ),
-                event: selectedEvent
-            )
-            
-            self.processingCheckin = false
-            self.handleSuccessfulCheckin(mockCheckin)
+        // Use real API based on check-in type
+        let apiCall: AnyPublisher<CheckinLog, AppError>
+        if type == .checkin {
+            apiCall = graphQLService.performCheckin(qrCodeId: code, eventId: selectedEvent.id)
+        } else {
+            apiCall = graphQLService.performCheckout(qrCodeId: code, eventId: selectedEvent.id)
         }
+        
+        apiCall
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    self?.processingCheckin = false
+                    if case .failure(let error) = completion {
+                        self?.showError(error)
+                    }
+                },
+                receiveValue: { [weak self] checkinLog in
+                    self?.handleSuccessfulCheckin(checkinLog)
+                    // Refresh recent checkins to get updated data
+                    self?.loadRecentCheckins()
+                }
+            )
+            .store(in: &cancellables)
     }
     
     private func handleSuccessfulCheckin(_ checkinLog: CheckinLog) {
@@ -214,10 +206,12 @@ class ScannerViewModel: ObservableObject {
             id: "offline_\(UUID().uuidString)",
             userId: "unknown",
             eventId: event.id,
+            subscriptionId: nil,
             qrCodeId: code,
             type: type,
             timestamp: Date(),
-            createdAt: Date(),
+            location: nil,
+            notes: "Queued for sync",
             user: User(
                 id: "unknown",
                 email: "",

@@ -62,10 +62,12 @@ struct RecentCheckinRowView: View {
                 id: "1",
                 userId: "user1",
                 eventId: "event1",
+                subscriptionId: "sub1",
                 qrCodeId: "qr1",
                 type: .checkin,
                 timestamp: Date().addingTimeInterval(-300), // 5 minutes ago
-                createdAt: Date(),
+                location: "Main Entrance",
+                notes: nil,
                 user: User(
                     id: "user1",
                     email: "john@example.com",
@@ -98,10 +100,12 @@ struct RecentCheckinRowView: View {
                 id: "2",
                 userId: "user2",
                 eventId: "event1",
+                subscriptionId: "sub2",
                 qrCodeId: "qr2",
                 type: .checkout,
                 timestamp: Date().addingTimeInterval(-600), // 10 minutes ago
-                createdAt: Date(),
+                location: "Main Entrance",
+                notes: nil,
                 user: User(
                     id: "user2",
                     email: "jane@example.com",

@@ -43,6 +43,11 @@ struct ScannerView: View {
                         
                         // Recent Check-ins
                         recentCheckinsView
+                        
+                        // Debug section - only in development
+                        #if DEBUG
+                        debugSectionView
+                        #endif
                     }
                     .padding()
                 }
@@ -308,4 +313,73 @@ struct ScannerView: View {
             )
         }
     }
+    
+    // MARK: - Debug Section (Development only)
+    #if DEBUG
+    private var debugSectionView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Debug - Sample QR Codes")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 8) {
+                sampleQRButton(
+                    title: "Test User QR Code",
+                    qrCode: "USER-user1-SUB-sub1",
+                    description: "Sample QR for testing check-in"
+                )
+                
+                sampleQRButton(
+                    title: "Test User 2 QR Code", 
+                    qrCode: "USER-user2-SUB-sub2",
+                    description: "Another sample QR for testing"
+                )
+                
+                sampleQRButton(
+                    title: "Invalid QR Code",
+                    qrCode: "INVALID-QR-CODE",
+                    description: "Test error handling"
+                )
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(Constants.UI.cornerRadius)
+    }
+    
+    private func sampleQRButton(title: String, qrCode: String, description: String) -> some View {
+        Button(action: {
+            viewModel.performManualCheckin(code: qrCode, type: .checkin)
+        }) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Text("Tap to Test")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Text(qrCode)
+                    .font(.caption)
+                    .fontDesign(.monospaced)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 2)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color(.systemBackground))
+            .cornerRadius(8)
+        }
+    }
+    #endif
 }
