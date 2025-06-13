@@ -1,6 +1,6 @@
-mutation Login($email: String!, $password: String!) {
-  login(email: $email, password: $password) {
-    accessToken
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    access_token
     user {
       id
       email
@@ -9,6 +9,7 @@ mutation Login($email: String!, $password: String!) {
       lastName
       role
       isActive
+      clubId
     }
   }
 }
@@ -17,15 +18,27 @@ mutation Logout {
   logout
 }
 
-mutation Checkin($qrCodeId: ID!, $eventId: ID!) {
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    id
+    email
+    username
+    firstName
+    lastName
+    role
+    isActive
+    clubId
+  }
+}
+
+mutation Checkin($qrCodeId: String!, $eventId: String!) {
   checkin(qrCodeId: $qrCodeId, eventId: $eventId) {
     id
     type
+    action
     timestamp
     userId
     eventId
-    subscriptionId
-    qrCodeId
     user {
       id
       firstName
@@ -38,15 +51,14 @@ mutation Checkin($qrCodeId: ID!, $eventId: ID!) {
   }
 }
 
-mutation Checkout($qrCodeId: ID!, $eventId: ID!) {
+mutation Checkout($qrCodeId: String!, $eventId: String!) {
   checkout(qrCodeId: $qrCodeId, eventId: $eventId) {
     id
     type
+    action
     timestamp
     userId
     eventId
-    subscriptionId
-    qrCodeId
     user {
       id
       firstName
@@ -59,12 +71,29 @@ mutation Checkout($qrCodeId: ID!, $eventId: ID!) {
   }
 }
 
-mutation ScanQRCode($code: String!) {
-  scanQRCode(code: $code) {
+mutation GenerateQRCode($subscriptionId: ID!) {
+  generateQRCode(subscriptionId: $subscriptionId)
+}
+
+mutation GenerateUserQRCode($userId: ID!) {
+  generateUserQRCode(userId: $userId) {
     id
-    code
+    qrCode
     isActive
-    userId
-    subscriptionId
+    createdAt
+    updatedAt
+    expiresAt
   }
+}
+
+mutation CreateEvent($input: CreateEventInput!) {
+  createEvent(input: $input)
+}
+
+mutation UpdateEvent($id: String!, $input: UpdateEventInput!) {
+  updateEvent(id: $id, input: $input)
+}
+
+mutation DeleteEvent($id: String!) {
+  deleteEvent(id: $id)
 }
