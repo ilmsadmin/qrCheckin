@@ -111,6 +111,9 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
     
+    // Accompanist
+    implementation(libs.accompanist.permissions)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

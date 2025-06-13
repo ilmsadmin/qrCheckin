@@ -4,29 +4,36 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zplus.qrcheckin.domain.model.CheckinLog
 import com.zplus.qrcheckin.domain.model.Event
-import com.zplus.qrcheckin.domain.usecase.CheckinUseCase
-import com.zplus.qrcheckin.domain.usecase.GetEventsUseCase
 import com.zplus.qrcheckin.domain.repository.CheckinRepository
+import com.zplus.qrcheckin.domain.repository.EventRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
+import javax.inject.Inject
 
 data class QRScannerUiState(
     val events: List<Event> = emptyList(),
     val selectedEvent: Event? = null,
     val recentLogs: List<CheckinLog> = emptyList(),
+    val scannedQRCode: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null,
-    val lastScannedQRCode: String? = null
+    val isEventDropdownExpanded: Boolean = false,
+    val statusMessage: String? = null,
+    val isError: Boolean = false
 )
 
-class QRScannerViewModel(
-    private val getEventsUseCase: GetEventsUseCase,
-    private val checkinUseCase: CheckinUseCase,
+@HiltViewModel
+class QRScannerViewModel @Inject constructor(
+    private val eventRepository: EventRepository,
     private val checkinRepository: CheckinRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(QRScannerUiState())
     val uiState: StateFlow<QRScannerUiState> = _uiState.asStateFlow()
+    
+    private val json = Json { ignoreUnknownKeys = true }
     
     init {
         loadEvents()
@@ -35,16 +42,10 @@ class QRScannerViewModel(
     
     private fun loadEvents() {
         viewModelScope.launch {
-            try {
-                getEventsUseCase().collect { events ->
-                    _uiState.value = _uiState.value.copy(
-                        events = events,
-                        selectedEvent = _uiState.value.selectedEvent ?: events.firstOrNull()
-                    )
-                }
-            } catch (e: Exception) {
+            eventRepository.getEvents().collectLatest { events ->
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Failed to load events"
+                    events = events,
+                    selectedEvent = _uiState.value.selectedEvent ?: events.firstOrNull()
                 )
             }
         }
@@ -52,15 +53,12 @@ class QRScannerViewModel(
     
     private fun loadRecentLogs() {
         viewModelScope.launch {
-            try {
-                checkinRepository.getCheckinLogs().collect { logs ->
-                    _uiState.value = _uiState.value.copy(
-                        recentLogs = logs.take(10) // Show last 10 logs
-                    )
-                }
-            } catch (e: Exception) {
+            checkinRepository.getCheckinLogs(
+                limit = 10,
+                offset = 0
+            ).collectLatest { logs ->
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Failed to load recent logs"
+                    recentLogs = logs
                 )
             }
         }
@@ -70,77 +68,107 @@ class QRScannerViewModel(
         _uiState.value = _uiState.value.copy(selectedEvent = event)
     }
     
-    fun onQRCodeScanned(qrCode: String) {
-        _uiState.value = _uiState.value.copy(lastScannedQRCode = qrCode)
+    fun setEventDropdownExpanded(expanded: Boolean) {
+        _uiState.value = _uiState.value.copy(isEventDropdownExpanded = expanded)
     }
     
-    fun checkin() {
-        val state = _uiState.value
-        val qrCode = state.lastScannedQRCode
-        val eventId = state.selectedEvent?.id
+    fun handleQRCodeScan(qrCode: String) {
+        _uiState.value = _uiState.value.copy(
+            scannedQRCode = qrCode,
+            statusMessage = "QR Code scanned: ${qrCode.take(20)}...",
+            isError = false
+        )
         
-        if (qrCode != null && eventId != null) {
-            viewModelScope.launch {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-                
-                checkinUseCase.checkin(qrCode, eventId).fold(
-                    onSuccess = { log ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            lastScannedQRCode = null // Clear after successful checkin
-                        )
-                        // Refresh recent logs
-                        loadRecentLogs()
-                    },
-                    onFailure = { error ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = error.message ?: "Checkin failed"
-                        )
-                    }
-                )
+        // Clear message after 3 seconds
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3000)
+            if (_uiState.value.statusMessage?.contains("QR Code scanned") == true) {
+                _uiState.value = _uiState.value.copy(statusMessage = null)
             }
-        } else {
-            _uiState.value = _uiState.value.copy(
-                error = "Please scan a QR code and select an event"
-            )
         }
     }
     
-    fun checkout() {
-        val state = _uiState.value
-        val qrCode = state.lastScannedQRCode
-        val eventId = state.selectedEvent?.id
+    fun processCheckin() {
+        val currentState = _uiState.value
+        val qrCode = currentState.scannedQRCode
+        val event = currentState.selectedEvent
         
-        if (qrCode != null && eventId != null) {
-            viewModelScope.launch {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-                
-                checkinUseCase.checkout(qrCode, eventId).fold(
-                    onSuccess = { log ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            lastScannedQRCode = null // Clear after successful checkout
-                        )
-                        // Refresh recent logs
-                        loadRecentLogs()
-                    },
-                    onFailure = { error ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = error.message ?: "Checkout failed"
-                        )
-                    }
-                )
+        if (qrCode.isEmpty() || event == null) {
+            showError("Please scan a QR code and select an event")
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            try {
+                val result = checkinRepository.checkin(qrCode, event.id)
+                result.onSuccess { checkinLog ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        statusMessage = "Check-in successful for ${checkinLog.user?.firstName ?: "user"}",
+                        isError = false,
+                        scannedQRCode = ""
+                    )
+                    loadRecentLogs() // Refresh logs
+                }.onFailure { exception ->
+                    showError("Check-in failed: ${exception.message}")
+                }
+            } catch (e: Exception) {
+                showError("Network error: ${e.message}")
             }
-        } else {
-            _uiState.value = _uiState.value.copy(
-                error = "Please scan a QR code and select an event"
-            )
         }
     }
     
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+    fun processCheckout() {
+        val currentState = _uiState.value
+        val qrCode = currentState.scannedQRCode
+        val event = currentState.selectedEvent
+        
+        if (qrCode.isEmpty() || event == null) {
+            showError("Please scan a QR code and select an event")
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            try {
+                val result = checkinRepository.checkout(qrCode, event.id)
+                result.onSuccess { checkinLog ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        statusMessage = "Check-out successful for ${checkinLog.user?.firstName ?: "user"}",
+                        isError = false,
+                        scannedQRCode = ""
+                    )
+                    loadRecentLogs() // Refresh logs
+                }.onFailure { exception ->
+                    showError("Check-out failed: ${exception.message}")
+                }
+            } catch (e: Exception) {
+                showError("Network error: ${e.message}")
+            }
+        }
+    }
+    
+    private fun showError(message: String) {
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            statusMessage = message,
+            isError = true
+        )
+        
+        // Clear error message after 5 seconds
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(5000)
+            if (_uiState.value.statusMessage == message) {
+                _uiState.value = _uiState.value.copy(statusMessage = null, isError = false)
+            }
+        }
+    }
+    
+    fun clearStatusMessage() {
+        _uiState.value = _uiState.value.copy(statusMessage = null, isError = false)
     }
 }

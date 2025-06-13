@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.zplus.qrcheckin.domain.model.CheckinLog
 import com.zplus.qrcheckin.domain.model.CheckinType
 import com.zplus.qrcheckin.domain.model.Event
@@ -30,13 +31,10 @@ data class EventStats(
 
 @Composable
 fun StatsScreen(
-    logs: List<CheckinLog>,
-    events: List<Event>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: StatsViewModel = hiltViewModel()
 ) {
-    val eventStats = remember(logs, events) {
-        calculateEventStats(logs, events)
-    }
+    val uiState by viewModel.uiState.collectAsState()
     
     Column(
         modifier = modifier
@@ -49,30 +47,74 @@ fun StatsScreen(
             "Statistics",
             color = Color.White,
             fontSize = 24.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp)
         )
         
-        // Overview Cards
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                OverviewSection(logs = logs)
-            }
-            
-            item {
+        // Error State
+        uiState.error?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFEF4444)
+                )
+            ) {
                 Text(
-                    "Event Statistics",
+                    text = error,
                     color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(16.dp)
                 )
             }
-            
-            items(eventStats) { stats ->
-                EventStatsCard(stats = stats)
+        }
+        
+        // Loading State
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF3B82F6))
+            }
+        } else {
+            // Content
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    OverviewSection(logs = uiState.logs)
+                }
+                
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Event Statistics",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        
+                        IconButton(
+                            onClick = { viewModel.refresh() }
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Refresh",
+                                tint = Color(0xFF60A5FA)
+                            )
+                        }
+                    }
+                }
+                
+                items(uiState.eventStats) { stats ->
+                    EventStatsCard(stats = stats)
+                }
             }
         }
     }
@@ -82,6 +124,13 @@ fun StatsScreen(
 private fun OverviewSection(
     logs: List<CheckinLog>
 ) {
+    val today = Calendar.getInstance()
+    val todayLogs = logs.filter { log ->
+        val logDate = Calendar.getInstance().apply { time = log.timestamp }
+        today.get(Calendar.YEAR) == logDate.get(Calendar.YEAR) &&
+                today.get(Calendar.DAY_OF_YEAR) == logDate.get(Calendar.DAY_OF_YEAR)
+    }
+    
     Column {
         Text(
             "Today's Overview",
@@ -97,7 +146,7 @@ private fun OverviewSection(
         ) {
             StatsCard(
                 title = "Total Check-ins",
-                value = logs.count { it.type == CheckinType.CHECKIN }.toString(),
+                value = todayLogs.count { it.type == CheckinType.CHECKIN }.toString(),
                 icon = Icons.Default.Login,
                 color = Color(0xFF10B981),
                 modifier = Modifier.weight(1f)

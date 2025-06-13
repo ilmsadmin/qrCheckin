@@ -1,7 +1,6 @@
 package com.zplus.qrcheckin.presentation.scanner
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,21 +17,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.zplus.qrcheckin.domain.model.CheckinLog
 import com.zplus.qrcheckin.domain.model.CheckinType
 import com.zplus.qrcheckin.domain.model.Event
+import com.zplus.qrcheckin.utils.scanner.CameraPermission
+import com.zplus.qrcheckin.utils.scanner.CameraPreview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QRScannerScreen(
-    events: List<Event>,
-    recentLogs: List<CheckinLog>,
-    selectedEvent: Event?,
-    onEventSelected: (Event) -> Unit,
-    onCheckin: () -> Unit,
-    onCheckout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: QRScannerViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -44,10 +43,284 @@ fun QRScannerScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp),
+                .padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Column {
+                Text(
+                    text = "QR Scanner",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "Staff Portal",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+            
+            IconButton(
+                onClick = { /* Settings */ },
+                modifier = Modifier
+                    .background(
+                        Color.White.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.White
+                )
+            }
+        }
+        
+        // Event Selection
+        uiState.events.let { events ->
+            if (events.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1F2937)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Current Event",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        ExposedDropdownMenuBox(
+                            expanded = uiState.isEventDropdownExpanded,
+                            onExpandedChange = { viewModel.setEventDropdownExpanded(it) }
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.selectedEvent?.name ?: "Select Event",
+                                onValueChange = { },
+                                readOnly = true,
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(
+                                        expanded = uiState.isEventDropdownExpanded
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF3B82F6),
+                                    unfocusedBorderColor = Color.Gray
+                                )
+                            )
+                            
+                            ExposedDropdownMenu(
+                                expanded = uiState.isEventDropdownExpanded,
+                                onDismissRequest = { viewModel.setEventDropdownExpanded(false) }
+                            ) {
+                                events.forEach { event ->
+                                    DropdownMenuItem(
+                                        text = { Text(event.name) },
+                                        onClick = {
+                                            viewModel.selectEvent(event)
+                                            viewModel.setEventDropdownExpanded(false)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Camera Scanner
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(bottom = 24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1F2937)
+            )
+        ) {
+            CameraPermission {
+                CameraPreview(
+                    onQRCodeDetected = { qrCode ->
+                        viewModel.handleQRCodeScan(qrCode)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+        
+        // Action Buttons
+        if (uiState.selectedEvent != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.processCheckin() },
+                    enabled = !uiState.isLoading && uiState.scannedQRCode.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF10B981)
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(Icons.Default.Login, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check In")
+                    }
+                }
+                
+                Button(
+                    onClick = { viewModel.processCheckout() },
+                    enabled = !uiState.isLoading && uiState.scannedQRCode.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFEF4444)
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(Icons.Default.Logout, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check Out")
+                    }
+                }
+            }
+        }
+        
+        // Status Message
+        uiState.statusMessage?.let { message ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (uiState.isError) Color(0xFFEF4444) else Color(0xFF10B981)
+                )
+            ) {
+                Text(
+                    text = message,
+                    color = Color.White,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+        
+        // Recent Scans
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1F2937)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Recent Scans",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.height(200.dp)
+                ) {
+                    items(uiState.recentLogs) { log ->
+                        RecentScanItem(log)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentScanItem(log: CheckinLog) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF374151)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            if (log.type == CheckinType.CHECKIN) Color(0xFF10B981) else Color(0xFFEF4444),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (log.type == CheckinType.CHECKIN) Icons.Default.Check else Icons.Default.Close,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column {
+                    Text(
+                        text = log.user?.let { "${it.firstName} ${it.lastName}" } ?: "Unknown User",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${log.type.name.lowercase().replaceFirstChar { it.uppercase() }} • ${log.event?.name ?: "Unknown Event"}",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+            
+            Text(
+                text = if (log.type == CheckinType.CHECKIN) "Success" else "Completed",
+                color = if (log.type == CheckinType.CHECKIN) Color(0xFF10B981) else Color(0xFFEF4444),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.QrCode,
