@@ -1,7 +1,9 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { CheckinService } from '../checkin/checkin.service';
 import { User } from '../common/dto/user.dto';
+import { CheckinLog } from '../common/dto/checkin-log.dto';
 import { QRCode } from '../common/dto/qrcode.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -12,7 +14,10 @@ import { Role } from '../common/enums';
 @Resolver(() => User)
 @UseGuards(JwtAuthGuard)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly checkinService: CheckinService,
+  ) {}
 
   @Query(() => [User])
   @UseGuards(RolesGuard)
@@ -45,5 +50,16 @@ export class UsersResolver {
     @Args('userId', { type: () => ID }) userId: string,
   ): Promise<QRCode> {
     return this.usersService.generateUserQRCode(userId);
+  }
+
+  @Query(() => [CheckinLog])
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.STAFF)
+  async userCheckinLogs(
+    @Args('userId', { type: () => ID, nullable: true }) userId?: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
+  ): Promise<CheckinLog[]> {
+    return this.checkinService.getCheckinLogs(userId, undefined, limit, offset);
   }
 }

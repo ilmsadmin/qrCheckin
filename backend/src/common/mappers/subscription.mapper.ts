@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Subscription as PrismaSubscription } from '@prisma/client';
 import { Subscription } from '../dto/subscription.dto';
 import { SubscriptionType } from '../enums';
 import { UserMapper } from './user.mapper';

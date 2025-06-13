@@ -58,7 +58,7 @@ export class CheckinService {
     });
   }
 
-  async getCheckinLogs(userId?: string, eventId?: string) {
+  async getCheckinLogs(userId?: string, eventId?: string, limit?: number, offset?: number) {
     return this.prisma.checkinLog.findMany({
       where: {
         ...(userId && { userId }),
@@ -77,7 +77,9 @@ export class CheckinService {
       },
       orderBy: {
         timestamp: 'desc',
-      }
+      },
+      ...(limit && { take: limit }),
+      ...(offset && { skip: offset }),
     });
   }
 }
