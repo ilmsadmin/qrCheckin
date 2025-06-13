@@ -12,7 +12,7 @@
 #### ⏳ 2. Network Connectivity (Cần test từ iOS app)
 ```bash
 # Test từ máy tính (đã OK):
-curl -X POST http://192.168.1.40:4000/graphql \
+curl -X POST http://192.168.1.43:4000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query":"{ __typename }"}'
 # Response: {"data":{"__typename":"Query"}}

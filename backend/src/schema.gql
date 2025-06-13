@@ -46,6 +46,7 @@ type Mutation {
   deleteEvent(id: String!): String!
   deleteSubscriptionPackage(id: String!): String!
   generateQRCode(subscriptionId: ID!): String!
+  generateUserQRCode(userId: ID!): QRCode!
   login(input: LoginInput!): AuthResponse!
   logout: String!
   register(input: RegisterInput!): User!
@@ -55,6 +56,15 @@ type Mutation {
   updateClub(description: String, id: ID!, isActive: Boolean, name: String): Club!
   updateEvent(id: String!, input: UpdateEventInput!): String!
   updateSubscriptionPackage(description: String, discountPrice: Float, duration: Float, features: [String!], id: String!, isActive: Boolean, isPopular: Boolean, maxCheckins: Float, name: String, price: Float, sortOrder: Float, type: String): String!
+}
+
+type QRCode {
+  createdAt: DateTime!
+  expiresAt: DateTime
+  id: ID!
+  isActive: Boolean!
+  qrCode: String!
+  updatedAt: DateTime!
 }
 
 type Query {

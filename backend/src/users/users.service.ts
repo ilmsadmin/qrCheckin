@@ -108,6 +108,10 @@ export class UsersService {
       const startDate = new Date();
       const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
+      // Generate QR code data
+      const qrCodeData = `USER-${userId}-SUB-${new Date().getTime()}`; // Use timestamp as placeholder
+
+      // Create subscription and QR code in a single transaction
       userSubscription = await this.prisma.subscription.create({
         data: {
           name: 'User QR Code Access',
@@ -118,22 +122,22 @@ export class UsersService {
           endDate,
           userId,
           clubId: defaultClub.id,
+          qrCodes: {
+            create: {
+              code: qrCodeData,
+              userId,
+              expiresAt: endDate,
+            }
+          },
+        },
+        include: {
+          qrCodes: true,
         },
       });
     }
 
-    // Generate QR code
-    const qrCodeData = `USER-${userId}-SUB-${userSubscription.id}`;
-    
-    // Create QR code in database
-    const qrCode = await this.prisma.qRCode.create({
-      data: {
-        code: qrCodeData,
-        userId,
-        subscriptionId: userSubscription.id,
-        expiresAt: userSubscription.endDate,
-      },
-    });
+    // Get the QR code created with the subscription
+    const qrCode = userSubscription.qrCodes[0];
 
     return {
       id: qrCode.id,

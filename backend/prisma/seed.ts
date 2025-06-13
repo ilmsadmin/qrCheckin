@@ -173,6 +173,27 @@ async function main() {
   });
   console.log(`Created QR code: ${qrCode.code}`);
 
+  // Create additional QR codes for testing
+  const qrCode1 = await prisma.qRCode.create({
+    data: {
+      code: 'USER-user1-SUB-sub1',
+      userId: user.id,
+      subscriptionId: userSubscription.id,
+      expiresAt: userSubscription.endDate,
+    },
+  });
+  console.log(`Created test QR code: ${qrCode1.code}`);
+
+  const qrCode2 = await prisma.qRCode.create({
+    data: {
+      code: 'USER-user2-SUB-sub2',
+      userId: user.id,
+      subscriptionId: userSubscription.id,
+      expiresAt: userSubscription.endDate,
+    },
+  });
+  console.log(`Created test QR code: ${qrCode2.code}`);
+
   // Create check-in log
   const checkinLog = await prisma.checkinLog.create({
     data: {

@@ -7,10 +7,19 @@ export class CheckinService {
   constructor(private prisma: PrismaService) {}
 
   async checkin(qrCodeId: string, eventId: string) {
-    const qrCode = await this.prisma.qRCode.findUnique({
+    // Try to find QR code by ID first, then by code field
+    let qrCode = await this.prisma.qRCode.findUnique({
       where: { id: qrCodeId },
       include: { user: true, subscription: true }
     });
+
+    // If not found by ID, try to find by code field
+    if (!qrCode) {
+      qrCode = await this.prisma.qRCode.findUnique({
+        where: { code: qrCodeId },
+        include: { user: true, subscription: true }
+      });
+    }
 
     if (!qrCode || !qrCode.isActive) {
       throw new Error('Invalid QR Code');
@@ -22,7 +31,7 @@ export class CheckinService {
         userId: qrCode.userId,
         eventId,
         subscriptionId: qrCode.subscriptionId,
-        qrCodeId,
+        qrCodeId: qrCode.id,
         timestamp: new Date(),
       },
       include: {
@@ -33,10 +42,19 @@ export class CheckinService {
   }
 
   async checkout(qrCodeId: string, eventId: string) {
-    const qrCode = await this.prisma.qRCode.findUnique({
+    // Try to find QR code by ID first, then by code field
+    let qrCode = await this.prisma.qRCode.findUnique({
       where: { id: qrCodeId },
       include: { user: true, subscription: true }
     });
+
+    // If not found by ID, try to find by code field
+    if (!qrCode) {
+      qrCode = await this.prisma.qRCode.findUnique({
+        where: { code: qrCodeId },
+        include: { user: true, subscription: true }
+      });
+    }
 
     if (!qrCode || !qrCode.isActive) {
       throw new Error('Invalid QR Code');
@@ -48,7 +66,7 @@ export class CheckinService {
         userId: qrCode.userId,
         eventId,
         subscriptionId: qrCode.subscriptionId,
-        qrCodeId,
+        qrCodeId: qrCode.id,
         timestamp: new Date(),
       },
       include: {
