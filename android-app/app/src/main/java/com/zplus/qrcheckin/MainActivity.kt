@@ -18,8 +18,10 @@ import com.zplus.qrcheckin.presentation.logs.LogsScreen
 import com.zplus.qrcheckin.presentation.stats.StatsScreen
 import com.zplus.qrcheckin.presentation.profile.ProfileScreen
 import com.zplus.qrcheckin.ui.theme.QrCheckinTheme
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

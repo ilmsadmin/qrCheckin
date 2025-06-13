@@ -1,109 +1,95 @@
 package com.zplus.qrcheckin.di
 
+import android.content.Context
+import com.apollographql.apollo3.ApolloClient
+import com.zplus.qrcheckin.data.remote.api.QRCheckinApiService
+import com.zplus.qrcheckin.data.remote.apollo.ApolloClientProvider
+import com.zplus.qrcheckin.data.remote.apollo.AuthInterceptor
+import com.zplus.qrcheckin.data.remote.apollo.TokenManager
+import com.zplus.qrcheckin.data.repository.AuthRepositoryImpl
+import com.zplus.qrcheckin.data.repository.CheckinRepositoryImpl
+import com.zplus.qrcheckin.data.repository.EventRepositoryImpl
+import com.zplus.qrcheckin.domain.repository.AuthRepository
+import com.zplus.qrcheckin.domain.repository.CheckinRepository
+import com.zplus.qrcheckin.domain.repository.EventRepository
+import com.zplus.qrcheckin.domain.usecase.CheckinUseCase
+import com.zplus.qrcheckin.domain.usecase.GetEventsUseCase
+import dagger.Binds
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.components.ViewModelComponent
+import javax.inject.Singleton
+
 /**
- * Dependency Injection modules for Hilt
- * 
- * These modules would provide dependencies throughout the app.
- * To use Hilt, you would need to:
- * 1. Add Hilt dependencies to build.gradle
- * 2. Add @HiltAndroidApp to Application class
- * 3. Add @AndroidEntryPoint to Activities/Fragments
- * 4. Use @Inject in ViewModels and other classes
+ * Network module providing Apollo GraphQL client and related dependencies
  */
-
-/*
-Example of what the Hilt modules would look like:
-
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
+    fun provideTokenManager(): TokenManager {
+        return TokenManager()
     }
     
     @Provides
     @Singleton
-    fun provideApolloClient(okHttpClient: OkHttpClient): ApolloClient {
-        return ApolloClient.Builder()
-            .serverUrl("http://localhost:4000/graphql")
-            .okHttpClient(okHttpClient)
-            .build()
+    fun provideAuthInterceptor(tokenManager: TokenManager): AuthInterceptor {
+        return AuthInterceptor(tokenManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideApolloClientProvider(authInterceptor: AuthInterceptor): ApolloClientProvider {
+        return ApolloClientProvider(authInterceptor)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideApolloClient(apolloClientProvider: ApolloClientProvider): ApolloClient {
+        return apolloClientProvider.apolloClient
     }
     
     @Provides
     @Singleton
     fun provideQRCheckinApiService(apolloClient: ApolloClient): QRCheckinApiService {
-        return QRCheckinApiServiceImpl(apolloClient)
+        return QRCheckinApiService(apolloClient)
     }
 }
 
+/**
+ * Repository module providing repository implementations
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+abstract class RepositoryModule {
     
-    @Provides
+    @Binds
     @Singleton
-    fun provideQRCheckinDatabase(@ApplicationContext context: Context): QRCheckinDatabase {
-        return Room.databaseBuilder(
-            context,
-            QRCheckinDatabase::class.java,
-            "qr_checkin_database"
-        ).build()
-    }
+    abstract fun bindAuthRepository(
+        authRepositoryImpl: AuthRepositoryImpl
+    ): AuthRepository
     
-    @Provides
-    fun provideCheckinLogDao(database: QRCheckinDatabase): CheckinLogDao {
-        return database.checkinLogDao()
-    }
+    @Binds
+    @Singleton
+    abstract fun bindCheckinRepository(
+        checkinRepositoryImpl: CheckinRepositoryImpl
+    ): CheckinRepository
     
-    @Provides
-    fun provideEventDao(database: QRCheckinDatabase): EventDao {
-        return database.eventDao()
-    }
+    @Binds
+    @Singleton
+    abstract fun bindEventRepository(
+        eventRepositoryImpl: EventRepositoryImpl
+    ): EventRepository
 }
 
-@Module
-@InstallIn(SingletonComponent::class)
-object RepositoryModule {
-    
-    @Provides
-    @Singleton
-    fun provideCheckinRepository(
-        apiService: QRCheckinApiService,
-        checkinLogDao: CheckinLogDao
-    ): CheckinRepository {
-        return CheckinRepositoryImpl(apiService, checkinLogDao)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideEventRepository(
-        apiService: QRCheckinApiService,
-        eventDao: EventDao
-    ): EventRepository {
-        return EventRepositoryImpl(apiService, eventDao)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideAuthRepository(
-        apiService: QRCheckinApiService,
-        @ApplicationContext context: Context
-    ): AuthRepository {
-        return AuthRepositoryImpl(apiService, context)
-    }
-}
-
+/**
+ * Use case module providing domain use cases
+ */
 @Module
 @InstallIn(ViewModelComponent::class)
 object UseCaseModule {
@@ -122,15 +108,3 @@ object UseCaseModule {
         return GetEventsUseCase(eventRepository)
     }
 }
-*/
-
-// Application class that would be annotated with @HiltAndroidApp
-/*
-@HiltAndroidApp
-class QRCheckinApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        // Initialize app-wide dependencies
-    }
-}
-*/
