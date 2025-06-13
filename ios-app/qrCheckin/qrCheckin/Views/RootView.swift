@@ -45,14 +45,10 @@ struct RootView: View {
                     Label("Scan", systemImage: "qrcode.viewfinder")
                 }
             
-            // Members view (placeholder for now)
-            NavigationView {
-                Text("Members View - Coming Soon")
-                    .navigationTitle("Members")
-            }
-            .tabItem {
-                Label("Members", systemImage: "person.2.fill")
-            }
+            StaffMembersView()
+                .tabItem {
+                    Label("Members", systemImage: "person.2.fill")
+                }
             
             DashboardView()
                 .tabItem {

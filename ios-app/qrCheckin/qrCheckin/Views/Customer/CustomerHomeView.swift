@@ -413,13 +413,14 @@ struct CustomerHomeView: View {
     }
     
     private var packagesView: some View {
-        Text("Packages View - Coming Soon")
-            .navigationTitle("Packages")
+        CustomerPackagesView()
+            .environmentObject(viewModel)
     }
     
     private var customerProfileView: some View {
-        Text("Profile View - Coming Soon")
-            .navigationTitle("Profile")
+        CustomerProfileView()
+            .environmentObject(viewModel)
+            .environmentObject(loginViewModel)
     }
 }
 
