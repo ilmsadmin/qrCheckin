@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navigation() {
-  const { user, isAuthenticated, isAdmin, isStaff, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isStaff, isSystemAdmin, isClubAdmin, isClubStaff, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
@@ -50,29 +50,71 @@ export default function Navigation() {
                 </Link>
                 {isAuthenticated && (
                   <>
-                    <Link
-                      href="/packages"
-                      className={`${
-                        router.pathname === '/packages'
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      } px-3 py-2 rounded-md text-sm font-medium`}
-                    >
-                      Packages
-                    </Link>
-                    <Link
-                      href="/subscriptions"
-                      className={`${
-                        router.pathname === '/subscriptions'
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      } px-3 py-2 rounded-md text-sm font-medium`}
-                    >
-                      My Subscriptions
-                    </Link>
+                    {/* Customer Portal Links */}
+                    {!isAdmin && !isStaff && !isSystemAdmin && !isClubAdmin && !isClubStaff && (
+                      <>
+                        <Link
+                          href="/customer"
+                          className={`${
+                            router.pathname.startsWith('/customer')
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          } px-3 py-2 rounded-md text-sm font-medium`}
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          href="/packages"
+                          className={`${
+                            router.pathname === '/packages'
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          } px-3 py-2 rounded-md text-sm font-medium`}
+                        >
+                          Packages
+                        </Link>
+                        <Link
+                          href="/subscriptions"
+                          className={`${
+                            router.pathname === '/subscriptions'
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          } px-3 py-2 rounded-md text-sm font-medium`}
+                        >
+                          My Subscriptions
+                        </Link>
+                      </>
+                    )}
                   </>
                 )}
-                {isStaff && (
+                {/* System Admin Links */}
+                {isSystemAdmin && (
+                  <Link
+                    href="/system-admin"
+                    className={`${
+                      router.pathname.startsWith('/system-admin')
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    } px-3 py-2 rounded-md text-sm font-medium`}
+                  >
+                    Platform Admin
+                  </Link>
+                )}
+                {/* Club Admin Links */}
+                {isClubAdmin && (
+                  <Link
+                    href="/club-admin"
+                    className={`${
+                      router.pathname.startsWith('/club-admin')
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    } px-3 py-2 rounded-md text-sm font-medium`}
+                  >
+                    Club Admin
+                  </Link>
+                )}
+                {/* Staff Links */}
+                {(isStaff || isClubStaff) && (
                   <Link
                     href="/scanner"
                     className={`${
@@ -84,6 +126,7 @@ export default function Navigation() {
                     Scanner
                   </Link>
                 )}
+                {/* Legacy Admin Links */}
                 {isAdmin && (
                   <Link
                     href="/admin"
@@ -205,31 +248,76 @@ export default function Navigation() {
             </Link>
             {isAuthenticated && (
               <>
-                <Link
-                  href="/packages"
-                  className={`${
-                    router.pathname === '/packages'
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  } block px-3 py-2 rounded-md text-base font-medium`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Packages
-                </Link>
-                <Link
-                  href="/subscriptions"
-                  className={`${
-                    router.pathname === '/subscriptions'
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  } block px-3 py-2 rounded-md text-base font-medium`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Subscriptions
-                </Link>
+                {/* Customer Portal Links */}
+                {!isAdmin && !isStaff && !isSystemAdmin && !isClubAdmin && !isClubStaff && (
+                  <>
+                    <Link
+                      href="/customer"
+                      className={`${
+                        router.pathname.startsWith('/customer')
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      } block px-3 py-2 rounded-md text-base font-medium`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/packages"
+                      className={`${
+                        router.pathname === '/packages'
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      } block px-3 py-2 rounded-md text-base font-medium`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Packages
+                    </Link>
+                    <Link
+                      href="/subscriptions"
+                      className={`${
+                        router.pathname === '/subscriptions'
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      } block px-3 py-2 rounded-md text-base font-medium`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      My Subscriptions
+                    </Link>
+                  </>
+                )}
               </>
             )}
-            {isStaff && (
+            {/* System Admin Links */}
+            {isSystemAdmin && (
+              <Link
+                href="/system-admin"
+                className={`${
+                  router.pathname.startsWith('/system-admin')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                } block px-3 py-2 rounded-md text-base font-medium`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Platform Admin
+              </Link>
+            )}
+            {/* Club Admin Links */}
+            {isClubAdmin && (
+              <Link
+                href="/club-admin"
+                className={`${
+                  router.pathname.startsWith('/club-admin')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                } block px-3 py-2 rounded-md text-base font-medium`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Club Admin
+              </Link>
+            )}
+            {/* Staff Links */}
+            {(isStaff || isClubStaff) && (
               <Link
                 href="/scanner"
                 className={`${
@@ -242,6 +330,7 @@ export default function Navigation() {
                 Scanner
               </Link>
             )}
+            {/* Legacy Admin Links */}
             {isAdmin && (
               <Link
                 href="/admin"
