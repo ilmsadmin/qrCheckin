@@ -7,6 +7,9 @@ interface ProtectedRouteProps {
   requireAuth?: boolean;
   requireAdmin?: boolean;
   requireStaff?: boolean;
+  requireSystemAdmin?: boolean;
+  requireClubAdmin?: boolean;
+  requireClubStaff?: boolean;
 }
 
 export default function ProtectedRoute({
@@ -14,9 +17,17 @@ export default function ProtectedRoute({
   requireAuth = false,
   requireAdmin = false,
   requireStaff = false,
+  requireSystemAdmin = false,
+  requireClubAdmin = false,
+  requireClubStaff = false,
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isAdmin, isStaff, loading } = useAuth();
   const router = useRouter();
+
+  // Helper functions for role checking
+  const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+  const isClubAdmin = user?.role === 'CLUB_ADMIN';
+  const isClubStaff = user?.role === 'CLUB_STAFF';
 
   useEffect(() => {
     if (loading) return; // Wait until the authentication state is loaded
@@ -36,12 +47,30 @@ export default function ProtectedRoute({
       return;
     }
 
+    // If system admin role is required and user is not a system admin
+    if (requireSystemAdmin && !isSystemAdmin) {
+      router.push('/');
+      return;
+    }
+
+    // If club admin role is required and user is not a club admin
+    if (requireClubAdmin && !isClubAdmin) {
+      router.push('/');
+      return;
+    }
+
+    // If club staff role is required and user is not club staff
+    if (requireClubStaff && !isClubStaff) {
+      router.push('/');
+      return;
+    }
+
     // If staff role is required and user is not staff
     if (requireStaff && !isStaff) {
       router.push('/');
       return;
     }
-  }, [isAuthenticated, isAdmin, isStaff, loading, requireAuth, requireAdmin, requireStaff, router]);
+  }, [isAuthenticated, isAdmin, isStaff, loading, requireAuth, requireAdmin, requireStaff, requireSystemAdmin, requireClubAdmin, requireClubStaff, router]);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -58,7 +87,10 @@ export default function ProtectedRoute({
   // Show 403 error for unauthorized access (authenticated but not authorized)
   if (
     (requireAdmin && isAuthenticated && !isAdmin) ||
-    (requireStaff && isAuthenticated && !isStaff)
+    (requireStaff && isAuthenticated && !isStaff) ||
+    (requireSystemAdmin && isAuthenticated && !isSystemAdmin) ||
+    (requireClubAdmin && isAuthenticated && !isClubAdmin) ||
+    (requireClubStaff && isAuthenticated && !isClubStaff)
   ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">

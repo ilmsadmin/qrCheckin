@@ -10,7 +10,7 @@ export interface User {
   username: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'STAFF' | 'USER';
+  role: 'ADMIN' | 'STAFF' | 'USER' | 'SYSTEM_ADMIN' | 'CLUB_ADMIN' | 'CLUB_STAFF';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +36,9 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isStaff: boolean;
+  isSystemAdmin: boolean;
+  isClubAdmin: boolean;
+  isClubStaff: boolean;
 }
 
 // Create the auth context
@@ -48,6 +51,9 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isAdmin: false,
   isStaff: false,
+  isSystemAdmin: false,
+  isClubAdmin: false,
+  isClubStaff: false,
 });
 
 // Provider component
@@ -201,12 +207,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Redirect based on user role
-        if (result.data.login.user.role === 'ADMIN') {
+        if (result.data.login.user.role === 'SYSTEM_ADMIN') {
+          router.push('/system-admin');
+        } else if (result.data.login.user.role === 'CLUB_ADMIN') {
+          router.push('/club-admin');
+        } else if (result.data.login.user.role === 'CLUB_STAFF') {
+          router.push('/scanner');
+        } else if (result.data.login.user.role === 'ADMIN') {
           router.push('/admin');
         } else if (result.data.login.user.role === 'STAFF') {
           router.push('/scanner');
         } else {
-          router.push('/packages');
+          router.push('/customer');
         }
       } else {
         console.error('Login succeeded but no user data returned');
@@ -248,6 +260,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'ADMIN';
   const isStaff = user?.role === 'STAFF' || user?.role === 'ADMIN';
+  const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
+  const isClubAdmin = user?.role === 'CLUB_ADMIN';
+  const isClubStaff = user?.role === 'CLUB_STAFF';
 
   return (
     <AuthContext.Provider
@@ -260,6 +275,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated,
         isAdmin,
         isStaff,
+        isSystemAdmin,
+        isClubAdmin,
+        isClubStaff,
       }}
     >
       {children}
