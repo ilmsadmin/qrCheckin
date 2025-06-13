@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CheckinLogMapper } from '../common/mappers/checkin-log.mapper';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class CheckinService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private checkinLogMapper: CheckinLogMapper
+  ) {}
 
   async checkin(qrCodeId: string, eventId: string) {
     const qrCode = await this.prisma.qRCode.findUnique({
@@ -16,7 +20,7 @@ export class CheckinService {
       throw new Error('Invalid QR Code');
     }
 
-    return this.prisma.checkinLog.create({
+    const checkinLog = await this.prisma.checkinLog.create({
       data: {
         type: 'CHECKIN',
         userId: qrCode.userId,
@@ -30,6 +34,8 @@ export class CheckinService {
         event: true,
       }
     });
+
+    return this.checkinLogMapper.mapPrismaCheckinLogToDto(checkinLog);
   }
 
   async checkout(qrCodeId: string, eventId: string) {
@@ -42,7 +48,7 @@ export class CheckinService {
       throw new Error('Invalid QR Code');
     }
 
-    return this.prisma.checkinLog.create({
+    const checkinLog = await this.prisma.checkinLog.create({
       data: {
         type: 'CHECKOUT',
         userId: qrCode.userId,
@@ -56,10 +62,12 @@ export class CheckinService {
         event: true,
       }
     });
+
+    return this.checkinLogMapper.mapPrismaCheckinLogToDto(checkinLog);
   }
 
   async getCheckinLogs(userId?: string, eventId?: string, limit?: number, offset?: number) {
-    return this.prisma.checkinLog.findMany({
+    const checkinLogs = await this.prisma.checkinLog.findMany({
       where: {
         ...(userId && { userId }),
         ...(eventId && { eventId }),
@@ -81,5 +89,7 @@ export class CheckinService {
       ...(limit && { take: limit }),
       ...(offset && { skip: offset }),
     });
+
+    return checkinLogs.map(log => this.checkinLogMapper.mapPrismaCheckinLogToDto(log));
   }
 }
