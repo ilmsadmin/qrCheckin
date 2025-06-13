@@ -39,7 +39,7 @@ fun QRScannerScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
+        // Header with Network Status
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -54,11 +54,52 @@ fun QRScannerScreen(
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-                Text(
-                    text = "Staff Portal",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Staff Portal",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Network Status Indicator
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                if (uiState.isConnected) Color(0xFF10B981) else Color(0xFFEF4444),
+                                CircleShape
+                            )
+                    )
+                    
+                    Text(
+                        text = if (uiState.isConnected) "Online" else "Offline",
+                        fontSize = 12.sp,
+                        color = if (uiState.isConnected) Color(0xFF10B981) else Color(0xFFEF4444),
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    
+                    // Queued Operations Count
+                    if (uiState.queuedOperationsCount > 0) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFEF4444)
+                            ),
+                            modifier = Modifier.padding(start = 4.dp)
+                        ) {
+                            Text(
+                                text = "${uiState.queuedOperationsCount} queued",
+                                fontSize = 10.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
             
             IconButton(

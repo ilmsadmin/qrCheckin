@@ -21,13 +21,17 @@ data class QRScannerUiState(
     val isLoading: Boolean = false,
     val isEventDropdownExpanded: Boolean = false,
     val statusMessage: String? = null,
-    val isError: Boolean = false
+    val isError: Boolean = false,
+    val isConnected: Boolean = true,
+    val queuedOperationsCount: Int = 0
 )
 
 @HiltViewModel
 class QRScannerViewModel @Inject constructor(
     private val eventRepository: EventRepository,
-    private val checkinRepository: CheckinRepository
+    private val checkinRepository: CheckinRepositoryImpl,
+    private val networkMonitor: com.zplus.qrcheckin.utils.offline.NetworkMonitor,
+    private val offlineQueueManager: com.zplus.qrcheckin.utils.offline.OfflineQueueManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(QRScannerUiState())
@@ -38,6 +42,24 @@ class QRScannerViewModel @Inject constructor(
     init {
         loadEvents()
         loadRecentLogs()
+        
+        // Monitor network status and offline queue
+        viewModelScope.launch {
+            networkMonitor.isConnected.collectLatest { isConnected ->
+                _uiState.value = _uiState.value.copy(isConnected = isConnected)
+                
+                // Process queued operations when connected
+                if (isConnected) {
+                    checkinRepository.processQueuedOperations()
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            offlineQueueManager.queuedOperations.collectLatest { queuedOps ->
+                _uiState.value = _uiState.value.copy(queuedOperationsCount = queuedOps.size)
+            }
+        }
     }
     
     private fun loadEvents() {

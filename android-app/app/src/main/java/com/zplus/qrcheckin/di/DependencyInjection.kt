@@ -14,6 +14,8 @@ import com.zplus.qrcheckin.domain.repository.CheckinRepository
 import com.zplus.qrcheckin.domain.repository.EventRepository
 import com.zplus.qrcheckin.domain.usecase.CheckinUseCase
 import com.zplus.qrcheckin.domain.usecase.GetEventsUseCase
+import com.zplus.qrcheckin.utils.offline.NetworkMonitor
+import com.zplus.qrcheckin.utils.offline.OfflineQueueManager
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -58,6 +60,18 @@ object NetworkModule {
     @Singleton
     fun provideQRCheckinApiService(apolloClient: ApolloClient): QRCheckinApiService {
         return QRCheckinApiService(apolloClient)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
+        return NetworkMonitor(context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideOfflineQueueManager(@ApplicationContext context: Context): OfflineQueueManager {
+        return OfflineQueueManager(context)
     }
 }
 
