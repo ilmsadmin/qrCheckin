@@ -249,6 +249,99 @@ class GraphQLService: ObservableObject {
             .eraseToAnyPublisher()
     }
     
+    // MARK: - Customer-specific Methods
+    func fetchCustomerProfile() -> AnyPublisher<User, AppError> {
+        let query = """
+        query CustomerProfile {
+            me {
+                id
+                email
+                username
+                firstName
+                lastName
+                role
+                isActive
+                createdAt
+                updatedAt
+                phone
+                dateOfBirth
+                activeSubscription {
+                    id
+                    type
+                    startDate
+                    endDate
+                    isActive
+                    package {
+                        id
+                        name
+                        description
+                        price
+                    }
+                }
+                qrCode
+            }
+        }
+        """
+        
+        return performQuery(query: query, variables: [:])
+            .map { (data: CustomerProfileResponse) in data.me }
+            .eraseToAnyPublisher()
+    }
+    
+    func fetchCustomerCheckinHistory(limit: Int = 20) -> AnyPublisher<[CheckinLog], AppError> {
+        let query = """
+        query CustomerCheckinHistory($limit: Int) {
+            myCheckinHistory(limit: $limit)
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "limit": limit
+        ]
+        
+        return performQuery(query: query, variables: variables)
+            .tryMap { (data: CustomerCheckinHistoryResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.myCheckinHistory.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let checkinLogs = try JSONDecoder.graphQLDecoder.decode([CheckinLog].self, from: jsonData)
+                return checkinLogs
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch checkin history: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func fetchSubscriptionPackages() -> AnyPublisher<[SubscriptionPackage], AppError> {
+        let query = """
+        query SubscriptionPackages {
+            subscriptionPackages {
+                id
+                name
+                description
+                price
+                discountPrice
+                duration
+                type
+                features
+                isActive
+                isPopular
+                createdAt
+                updatedAt
+            }
+        }
+        """
+        
+        return performQuery(query: query, variables: [:])
+            .map { (data: SubscriptionPackagesResponse) in data.subscriptionPackages }
+            .eraseToAnyPublisher()
+    }
+    
     // MARK: - Generic Query Execution
     private func performQuery<T: Codable>(query: String, variables: [String: Any]) -> AnyPublisher<T, AppError> {
         guard let url = URL(string: Constants.API.graphQLEndpoint) else {
@@ -368,6 +461,18 @@ private struct CheckinLogsStringResponse: Codable {
 
 private struct ClubsResponse: Codable {
     let clubs: [Club]
+}
+
+private struct CustomerProfileResponse: Codable {
+    let me: User
+}
+
+private struct CustomerCheckinHistoryResponse: Codable {
+    let myCheckinHistory: String
+}
+
+private struct SubscriptionPackagesResponse: Codable {
+    let subscriptionPackages: [SubscriptionPackage]
 }
 
 // MARK: - JSONDecoder Extension

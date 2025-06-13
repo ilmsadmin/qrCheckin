@@ -25,6 +25,7 @@ class ScannerViewModel: ObservableObject {
     @Published var alertTitle = ""
     @Published var lastScannedCode = ""
     @Published var processingCheckin = false
+    @Published var lastCheckinResult: CheckinLog?
     
     private let graphQLService = GraphQLService.shared
     let scannerService = QRScannerService()
@@ -182,6 +183,9 @@ class ScannerViewModel: ObservableObject {
     }
     
     private func handleSuccessfulCheckin(_ checkinLog: CheckinLog) {
+        // Set the last checkin result for modal display
+        lastCheckinResult = checkinLog
+        
         // Add to recent checkins
         recentCheckins.insert(checkinLog, at: 0)
         if recentCheckins.count > 5 {
@@ -244,6 +248,15 @@ class ScannerViewModel: ObservableObject {
     // MARK: - Manual Check-in
     func performManualCheckin(code: String, type: CheckinType) {
         performCheckin(code: code, type: type)
+    }
+    
+    // MARK: - Convenience Methods
+    func processCheckin(qrCode: String) {
+        performCheckin(code: qrCode, type: .checkin)
+    }
+    
+    func processCheckout(qrCode: String) {
+        performCheckin(code: qrCode, type: .checkout)
     }
     
     // MARK: - Error Handling
