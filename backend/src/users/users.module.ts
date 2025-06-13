@@ -3,9 +3,10 @@ import { UsersService } from './users.service';
 import { UsersResolver } from './users.resolver';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserMapper } from '../common/mappers/user.mapper';
+import { CheckinService } from '../checkin/checkin.service';
 
 @Module({
-  providers: [UsersService, UsersResolver, PrismaService, UserMapper],
+  providers: [UsersService, UsersResolver, PrismaService, UserMapper, CheckinService],
   exports: [UsersService, UserMapper],
 })
 export class UsersModule {}
