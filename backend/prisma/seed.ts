@@ -571,10 +571,284 @@ async function main() {
     console.log(`Created yoga subscription and QR code for ${member.firstName} ${member.lastName}`);
   }
 
-  // Create check-in logs
-  const checkinLog1 = await prisma.checkinLog.create({
+  // Create check-in logs with varied data for testing
+  const checkinStartTime = new Date();
+  
+  // Create multiple checkin logs for the past 30 days
+  const checkinLogs = [];
+  
+  // Customer 1 - Regular fitness member with consistent activity
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(checkinStartTime.getTime() - (i * 24 * 60 * 60 * 1000)); // Go back i days
+    
+    // Skip some days randomly to make it realistic
+    if (Math.random() > 0.7) continue;
+    
+    // Morning checkin (6-9 AM)
+    const morningCheckin = new Date(date);
+    morningCheckin.setHours(6 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 60), 0, 0);
+    
+    const checkinLog = await prisma.checkinLog.create({
+      data: {
+        type: 'CHECKIN',
+        timestamp: morningCheckin,
+        clubId: fitnessClub.id,
+        customerId: customer1.id,
+        eventId: fitnessEvent.id,
+        subscriptionId: customer1Subscription.id,
+        qrCodeId: qrCode1.id,
+        location: 'Main Entrance',
+        processedBy: fitnessStaff.id,
+        notes: i < 5 ? 'Regular member check-in' : null,
+      },
+    });
+    checkinLogs.push(checkinLog);
+    
+    // Sometimes add a checkout 1-3 hours later
+    if (Math.random() > 0.3) {
+      const checkoutTime = new Date(morningCheckin.getTime() + (1 + Math.random() * 2) * 60 * 60 * 1000);
+      
+      const checkoutLog = await prisma.checkinLog.create({
+        data: {
+          type: 'CHECKOUT',
+          timestamp: checkoutTime,
+          clubId: fitnessClub.id,
+          customerId: customer1.id,
+          eventId: fitnessEvent.id,
+          subscriptionId: customer1Subscription.id,
+          qrCodeId: qrCode1.id,
+          location: 'Main Entrance',
+          processedBy: fitnessStaff.id,
+          notes: null,
+        },
+      });
+      checkinLogs.push(checkoutLog);
+    }
+  }
+  
+  // Add some weekend yoga sessions for customer 1
+  for (let i = 0; i < 8; i++) {
+    const weekendDate = new Date(checkinStartTime.getTime() - (i * 7 * 24 * 60 * 60 * 1000)); // Go back i weeks
+    
+    // Saturday yoga (10-11 AM)
+    if (weekendDate.getDay() === 6 && Math.random() > 0.4) {
+      weekendDate.setHours(10, Math.floor(Math.random() * 60), 0, 0);
+      
+      const yogaCheckin = await prisma.checkinLog.create({
+        data: {
+          type: 'CHECKIN',
+          timestamp: weekendDate,
+          clubId: yogaStudio.id,
+          customerId: customer1.id,
+          eventId: yogaEvent.id,
+          subscriptionId: customer1Subscription.id,
+          qrCodeId: qrCode1.id,
+          location: 'Studio A',
+          processedBy: fitnessStaff.id,
+          notes: 'Weekend yoga session',
+        },
+      });
+      checkinLogs.push(yogaCheckin);
+      
+      // Checkout after 1 hour
+      const yogaCheckout = new Date(weekendDate.getTime() + 60 * 60 * 1000);
+      const checkoutLog = await prisma.checkinLog.create({
+        data: {
+          type: 'CHECKOUT',
+          timestamp: yogaCheckout,
+          clubId: yogaStudio.id,
+          customerId: customer1.id,
+          eventId: yogaEvent.id,
+          subscriptionId: customer1Subscription.id,
+          qrCodeId: qrCode1.id,
+          location: 'Studio A',
+          processedBy: fitnessStaff.id,
+          notes: null,
+        },
+      });
+      checkinLogs.push(checkoutLog);
+    }
+  }
+  
+  // Add some recent checkins for other yoga members
+  for (const member of yogaMembers) {
+    const memberQRCode = await prisma.qRCode.findFirst({
+      where: { customerId: member.id }
+    });
+    
+    if (!memberQRCode) continue;
+    
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(checkinStartTime.getTime() - (i * 2 * 24 * 60 * 60 * 1000)); // Every 2 days
+      
+      if (Math.random() > 0.6) continue; // Skip some sessions
+      
+      // Evening yoga sessions (6-8 PM)
+      const eveningTime = new Date(date);
+      eveningTime.setHours(18 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 60), 0, 0);
+      
+      const checkinLog = await prisma.checkinLog.create({
+        data: {
+          type: 'CHECKIN',
+          timestamp: eveningTime,
+          clubId: yogaStudio.id,
+          customerId: member.id,
+          eventId: yogaEvent.id,
+          subscriptionId: (await prisma.subscription.findFirst({ where: { customerId: member.id } }))?.id,
+          qrCodeId: memberQRCode.id,
+          location: 'Studio B',
+          processedBy: fitnessStaff.id,
+          notes: i === 0 ? 'First time visitor' : null,
+        },
+      });
+      checkinLogs.push(checkinLog);
+      
+      // Checkout after yoga session (1-1.5 hours)
+      if (Math.random() > 0.2) {
+        const checkoutTime = new Date(eveningTime.getTime() + (60 + Math.random() * 30) * 60 * 1000);
+        
+        const checkoutLog = await prisma.checkinLog.create({
+          data: {
+            type: 'CHECKOUT',
+            timestamp: checkoutTime,
+            clubId: yogaStudio.id,
+            customerId: member.id,
+            eventId: yogaEvent.id,
+            subscriptionId: (await prisma.subscription.findFirst({ where: { customerId: member.id } }))?.id,
+            qrCodeId: memberQRCode.id,
+            location: 'Studio B',
+            processedBy: fitnessStaff.id,
+            notes: null,
+          },
+        });
+        checkinLogs.push(checkoutLog);
+      }
+    }
+  }
+  
+  console.log(`Created ${checkinLogs.length} check-in/check-out logs for testing activity screen`);
+
+  // Add more comprehensive test data for activity screen
+  // Add varied check-in patterns for fitness club members
+  for (const member of members.slice(0, 5)) { // First 5 active members
+    const memberQRCode = await prisma.qRCode.findFirst({
+      where: { customerId: member.id }
+    });
+
+    if (!memberQRCode) continue;
+
+    const memberSubscription = await prisma.subscription.findFirst({
+      where: { customerId: member.id }
+    });
+
+    // Create varied check-in patterns for the last 60 days
+    for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
+      const baseDate = new Date(checkinStartTime.getTime() - (dayOffset * 24 * 60 * 60 * 1000));
+      
+      // Skip weekends for some members (simulate work schedule)
+      const memberIndex = members.indexOf(member);
+      if (memberIndex % 2 === 0 && (baseDate.getDay() === 0 || baseDate.getDay() === 6)) {
+        continue;
+      }
+      
+      // Create different activity patterns
+      const isWeekend = baseDate.getDay() === 0 || baseDate.getDay() === 6;
+      const activityChance = isWeekend ? 0.4 : 0.6; // Less activity on weekends
+      
+      if (Math.random() > activityChance) continue;
+
+      // Morning session (6 AM - 10 AM)
+      if (Math.random() > 0.5) {
+        const morningTime = new Date(baseDate);
+        morningTime.setHours(6 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 60), 0, 0);
+        
+        const morningCheckin = await prisma.checkinLog.create({
+          data: {
+            type: 'CHECKIN',
+            timestamp: morningTime,
+            clubId: fitnessClub.id,
+            customerId: member.id,
+            eventId: fitnessEvent.id,
+            subscriptionId: memberSubscription?.id,
+            qrCodeId: memberQRCode.id,
+            location: Math.random() > 0.5 ? 'Main Entrance' : 'Side Door',
+            processedBy: fitnessStaff.id,
+            notes: dayOffset < 7 ? 'Recent activity' : null,
+          },
+        });
+
+        // Morning checkout (1-3 hours later)
+        if (Math.random() > 0.2) {
+          const checkoutTime = new Date(morningTime.getTime() + (60 + Math.random() * 120) * 60 * 1000);
+          
+          await prisma.checkinLog.create({
+            data: {
+              type: 'CHECKOUT',
+              timestamp: checkoutTime,
+              clubId: fitnessClub.id,
+              customerId: member.id,
+              eventId: fitnessEvent.id,
+              subscriptionId: memberSubscription?.id,
+              qrCodeId: memberQRCode.id,
+              location: Math.random() > 0.5 ? 'Main Entrance' : 'Side Door',
+              processedBy: fitnessStaff.id,
+            },
+          });
+        }
+      }
+
+      // Evening session (5 PM - 9 PM) - less frequent
+      if (Math.random() > 0.7) {
+        const eveningTime = new Date(baseDate);
+        eveningTime.setHours(17 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 60), 0, 0);
+        
+        const eveningCheckin = await prisma.checkinLog.create({
+          data: {
+            type: 'CHECKIN',
+            timestamp: eveningTime,
+            clubId: fitnessClub.id,
+            customerId: member.id,
+            eventId: fitnessEvent.id,
+            subscriptionId: memberSubscription?.id,
+            qrCodeId: memberQRCode.id,
+            location: 'Main Entrance',
+            processedBy: fitnessStaff.id,
+            notes: 'Evening workout session',
+          },
+        });
+
+        // Evening checkout
+        if (Math.random() > 0.3) {
+          const checkoutTime = new Date(eveningTime.getTime() + (45 + Math.random() * 75) * 60 * 1000);
+          
+          await prisma.checkinLog.create({
+            data: {
+              type: 'CHECKOUT',
+              timestamp: checkoutTime,
+              clubId: fitnessClub.id,
+              customerId: member.id,
+              eventId: fitnessEvent.id,
+              subscriptionId: memberSubscription?.id,
+              qrCodeId: memberQRCode.id,
+              location: 'Main Entrance',
+              processedBy: fitnessStaff.id,
+            },
+          });
+        }
+      }
+    }
+    
+    console.log(`Added comprehensive activity data for ${member.firstName} ${member.lastName}`);
+  }
+
+  // Add today's activity for immediate testing
+  const todayMorning = new Date();
+  todayMorning.setHours(8, 30, 0, 0);
+  
+  await prisma.checkinLog.create({
     data: {
       type: 'CHECKIN',
+      timestamp: todayMorning,
       clubId: fitnessClub.id,
       customerId: customer1.id,
       eventId: fitnessEvent.id,
@@ -582,10 +856,49 @@ async function main() {
       qrCodeId: qrCode1.id,
       location: 'Main Entrance',
       processedBy: fitnessStaff.id,
-      notes: 'Regular member check-in',
+      notes: 'Today\'s morning workout',
     },
   });
-  console.log(`Created check-in log at ${checkinLog1.timestamp}`);
+
+  // Add this week's varied activity
+  for (let i = 1; i <= 5; i++) { // Monday to Friday this week
+    const weekDay = new Date();
+    weekDay.setDate(weekDay.getDate() - i);
+    weekDay.setHours(7, 15 + (i * 5), 0, 0); // Staggered times
+    
+    await prisma.checkinLog.create({
+      data: {
+        type: 'CHECKIN',
+        timestamp: weekDay,
+        clubId: fitnessClub.id,
+        customerId: customer1.id,
+        eventId: fitnessEvent.id,
+        subscriptionId: customer1Subscription.id,
+        qrCodeId: qrCode1.id,
+        location: 'Main Entrance',
+        processedBy: fitnessStaff.id,
+        notes: `Weekday workout - Day ${i}`,
+      },
+    });
+
+    // Add checkout
+    const checkoutTime = new Date(weekDay.getTime() + (90 + Math.random() * 30) * 60 * 1000);
+    await prisma.checkinLog.create({
+      data: {
+        type: 'CHECKOUT',
+        timestamp: checkoutTime,
+        clubId: fitnessClub.id,
+        customerId: customer1.id,
+        eventId: fitnessEvent.id,
+        subscriptionId: customer1Subscription.id,
+        qrCodeId: qrCode1.id,
+        location: 'Main Entrance',
+        processedBy: fitnessStaff.id,
+      },
+    });
+  }
+
+  console.log('Added comprehensive test data for activity screen testing');
 
   // Create payment records
   const payment1 = await prisma.payment.create({

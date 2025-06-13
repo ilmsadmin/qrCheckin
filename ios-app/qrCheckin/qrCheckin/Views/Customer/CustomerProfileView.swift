@@ -243,6 +243,17 @@ struct CustomerProfileView: View {
                     .padding(.leading, 44)
                 
                 settingsRow(
+                    title: "Activity History",
+                    icon: "clock.arrow.circlepath",
+                    action: {
+                        viewModel.selectedTab = 2 // Navigate to Activity tab
+                    }
+                )
+                
+                Divider()
+                    .padding(.leading, 44)
+                
+                settingsRow(
                     title: "Privacy Settings",
                     icon: "lock.shield",
                     action: {}

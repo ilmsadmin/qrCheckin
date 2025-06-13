@@ -29,13 +29,21 @@ struct CustomerHomeView: View {
                 }
                 .tag(1)
             
+            // Activity Tab
+            activityView
+                .tabItem {
+                    Image(systemName: "clock.arrow.circlepath")
+                    Text("Activity")
+                }
+                .tag(2)
+            
             // Packages Tab
             packagesView
                 .tabItem {
                     Image(systemName: "bag.fill")
                     Text("Packages")
                 }
-                .tag(2)
+                .tag(3)
             
             // Profile Tab
             customerProfileView
@@ -43,7 +51,7 @@ struct CustomerHomeView: View {
                     Image(systemName: "person.fill")
                     Text("Profile")
                 }
-                .tag(3)
+                .tag(4)
         }
         .tint(.blue)
         .onAppear {
@@ -312,7 +320,7 @@ struct CustomerHomeView: View {
                 Spacer()
                 
                 Button("See All") {
-                    // TODO: Navigate to full history
+                    viewModel.selectedTab = 2 // Navigate to Activity tab
                 }
                 .font(.subheadline)
                 .foregroundColor(.blue)
@@ -388,6 +396,11 @@ struct CustomerHomeView: View {
     // MARK: - Placeholder Views (will be implemented in separate files)
     private var customerQRView: some View {
         CustomerQRCodeView()
+            .environmentObject(viewModel)
+    }
+    
+    private var activityView: some View {
+        CustomerActivityView()
             .environmentObject(viewModel)
     }
     

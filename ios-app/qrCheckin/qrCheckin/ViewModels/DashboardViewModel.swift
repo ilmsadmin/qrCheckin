@@ -67,6 +67,7 @@ class DashboardViewModel: ObservableObject {
     }
     
     private func loadActiveEvents() {
+        print("📅 DashboardViewModel: Loading active events")
         isLoading = true
         
         graphQLService.fetchEvents()
@@ -75,36 +76,50 @@ class DashboardViewModel: ObservableObject {
                 receiveCompletion: { [weak self] completion in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
+                        print("❌ DashboardViewModel: Failed to load events - \(error.localizedDescription)")
                         self?.error = error
                     }
                 },
                 receiveValue: { [weak self] events in
+                    print("✅ DashboardViewModel: Loaded \(events.count) total events")
                     // Filter for active events (ongoing or upcoming today)
                     let now = Date()
                     let today = Calendar.current.startOfDay(for: now)
                     let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
                     
-                    self?.activeEvents = events.filter { event in
+                    let filtered = events.filter { event in
                         event.isActive && (
                             event.isOngoing ||
                             (event.startTime >= today && event.startTime < tomorrow)
                         )
                     }.sorted { $0.startTime < $1.startTime }
+                    
+                    print("📅 DashboardViewModel: Filtered to \(filtered.count) active events")
+                    for event in filtered {
+                        print("   - \(event.name) at \(event.startTime)")
+                    }
+                    
+                    self?.activeEvents = filtered
                 }
             )
             .store(in: &cancellables)
     }
     
     private func loadRecentActivity() {
+        print("⏰ DashboardViewModel: Loading recent activity")
         graphQLService.fetchRecentCheckins(limit: 10)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { completion in
                     if case .failure(let error) = completion {
-                        print("Failed to load recent activity: \(error.localizedDescription)")
+                        print("❌ DashboardViewModel: Failed to load recent activity - \(error.localizedDescription)")
                     }
                 },
                 receiveValue: { [weak self] checkins in
+                    print("✅ DashboardViewModel: Loaded \(checkins.count) recent checkins")
+                    for checkin in checkins {
+                        print("   - \(checkin.type.rawValue) by \(checkin.user?.displayName ?? "Unknown") at \(checkin.timestamp)")
+                    }
                     self?.recentActivity = checkins
                 }
             )

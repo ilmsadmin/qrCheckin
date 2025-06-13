@@ -203,30 +203,49 @@ class GraphQLService: ObservableObject {
     }
     
     // MARK: - Recent Check-ins
-    func fetchRecentCheckins(limit: Int = 10, userId: String? = nil, eventId: String? = nil) -> AnyPublisher<[CheckinLog], AppError> {
+    func fetchRecentCheckins(limit: Int = 10, customerId: String? = nil, eventId: String? = nil) -> AnyPublisher<[CheckinLog], AppError> {
         let query = """
-        query CheckinLogs($userId: String, $eventId: String) {
-            checkinLogs(userId: $userId, eventId: $eventId)
+        query CheckinLogs($customerId: String, $eventId: String, $limit: Int) {
+            checkinLogs(customerId: $customerId, eventId: $eventId, limit: $limit) {
+                id
+                userId
+                eventId
+                type
+                action
+                timestamp
+                location
+                notes
+                user {
+                    id
+                    firstName
+                    lastName
+                    email
+                    username
+                }
+                event {
+                    id
+                    name
+                    location
+                    startTime
+                    endTime
+                }
+            }
         }
         """
         
-        var variables: [String: Any] = [:]
-        if let userId = userId {
-            variables["userId"] = userId
+        var variables: [String: Any] = [
+            "limit": limit
+        ]
+        if let customerId = customerId {
+            variables["customerId"] = customerId
         }
         if let eventId = eventId {
             variables["eventId"] = eventId
         }
         
         return performQuery(query: query, variables: variables)
-            .tryMap { (data: CheckinLogsStringResponse) in
-                // Parse JSON string response from backend
-                guard let jsonData = data.checkinLogs.data(using: .utf8) else {
-                    throw AppError.dataError("Invalid response format")
-                }
-                let checkinLogs = try JSONDecoder.graphQLDecoder.decode([CheckinLog].self, from: jsonData)
-                // Apply limit on client side since backend doesn't support it
-                return Array(checkinLogs.prefix(limit))
+            .map { (data: CheckinLogsResponse) in
+                return data.checkinLogs
             }
             .mapError { error in
                 if error is AppError {
@@ -298,8 +317,31 @@ class GraphQLService: ObservableObject {
     
     func fetchCustomerCheckinHistory(limit: Int = 20) -> AnyPublisher<[CheckinLog], AppError> {
         let query = """
-        query CustomerCheckinHistory($limit: Int) {
-            myCheckinHistory(limit: $limit)
+        query UserCheckinLogs($limit: Int) {
+            userCheckinLogs(limit: $limit) {
+                id
+                userId
+                eventId
+                type
+                action
+                timestamp
+                location
+                notes
+                user {
+                    id
+                    firstName
+                    lastName
+                    email
+                    username
+                }
+                event {
+                    id
+                    name
+                    location
+                    startTime
+                    endTime
+                }
+            }
         }
         """
         
@@ -308,13 +350,8 @@ class GraphQLService: ObservableObject {
         ]
         
         return performQuery(query: query, variables: variables)
-            .tryMap { (data: CustomerCheckinHistoryResponse) in
-                // Parse JSON string response from backend
-                guard let jsonData = data.myCheckinHistory.data(using: .utf8) else {
-                    throw AppError.dataError("Invalid response format")
-                }
-                let checkinLogs = try JSONDecoder.graphQLDecoder.decode([CheckinLog].self, from: jsonData)
-                return checkinLogs
+            .map { (data: UserCheckinHistoryResponse) in
+                return data.userCheckinLogs
             }
             .mapError { error in
                 if error is AppError {
@@ -601,6 +638,10 @@ private struct CheckoutResponse: Codable {
     let checkout: CheckinLog
 }
 
+private struct CheckinLogsResponse: Codable {
+    let checkinLogs: [CheckinLog]
+}
+
 private struct CheckinLogsStringResponse: Codable {
     let checkinLogs: String
 }
@@ -615,6 +656,10 @@ private struct CustomerProfileResponse: Codable {
 
 private struct CustomerCheckinHistoryResponse: Codable {
     let myCheckinHistory: String
+}
+
+private struct UserCheckinHistoryResponse: Codable {
+    let userCheckinLogs: [CheckinLog]
 }
 
 private struct SubscriptionPackagesResponse: Codable {
