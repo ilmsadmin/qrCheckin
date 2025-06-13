@@ -1,34 +1,34 @@
-import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
+import { Resolver, Mutation, Query, Args, Int } from '@nestjs/graphql';
 import { CheckinService } from './checkin.service';
+import { CheckinLog } from '../common/dto/checkin-log.dto';
 
 @Resolver()
 export class CheckinResolver {
   constructor(private checkinService: CheckinService) {}
 
-  @Mutation(() => String)
+  @Mutation(() => CheckinLog)
   async checkin(
     @Args('qrCodeId') qrCodeId: string,
     @Args('eventId') eventId: string,
-  ) {
-    const result = await this.checkinService.checkin(qrCodeId, eventId);
-    return JSON.stringify(result);
+  ): Promise<CheckinLog> {
+    return this.checkinService.checkin(qrCodeId, eventId);
   }
 
-  @Mutation(() => String)
+  @Mutation(() => CheckinLog)
   async checkout(
     @Args('qrCodeId') qrCodeId: string,
     @Args('eventId') eventId: string,
-  ) {
-    const result = await this.checkinService.checkout(qrCodeId, eventId);
-    return JSON.stringify(result);
+  ): Promise<CheckinLog> {
+    return this.checkinService.checkout(qrCodeId, eventId);
   }
 
-  @Query(() => String)
+  @Query(() => [CheckinLog])
   async checkinLogs(
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
     @Args('userId', { nullable: true }) userId?: string,
     @Args('eventId', { nullable: true }) eventId?: string,
-  ) {
-    const logs = await this.checkinService.getCheckinLogs(userId, eventId);
-    return JSON.stringify(logs);
+  ): Promise<CheckinLog[]> {
+    return this.checkinService.getCheckinLogs(userId, eventId, limit, offset);
   }
 }
