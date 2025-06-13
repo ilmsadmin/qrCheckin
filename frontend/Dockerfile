@@ -19,6 +19,10 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 # Copy package files
 COPY package*.json ./
 
@@ -26,11 +30,21 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# Change ownership to nextjs user
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
 # Expose port
-EXPOSE 3000
+EXPOSE 3003
+
+# Set environment variable
+ENV NODE_ENV=production
+ENV PORT=3003
+ENV HOSTNAME="0.0.0.0"
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

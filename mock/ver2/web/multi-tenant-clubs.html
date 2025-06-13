@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Check-in System - Multi-Tenant Club Selection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-indigo-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-qrcode text-2xl text-white mr-3"></i>
+                    <h1 class="text-xl font-bold text-white">QR Check-in Platform Admin</h1>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <button class="text-white hover:text-indigo-200">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute top-2 right-2 inline-block w-2 h-2 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"></span>
+                    </button>
+                    <div class="flex items-center text-sm text-white">
+                        <img class="h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
+                        <span class="ml-2">System Admin</span>
+                    </div>
+                    <button class="text-white hover:text-indigo-200">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800">Club Management</h2>
+            <p class="text-gray-600">Manage all clubs on the platform</p>
+        </div>
+        
+        <!-- Club Search and Filter -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
+            <div class="flex-1 max-w-lg">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Search clubs by name, location, or ID">
+                </div>
+            </div>
+            
+            <div class="flex space-x-3">
+                <div class="relative inline-block text-left">
+                    <select class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option>All Clubs</option>
+                        <option>Active Clubs</option>
+                        <option>Pending Approval</option>
+                        <option>Inactive Clubs</option>
+                    </select>
+                </div>
+                
+                <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-plus mr-2"></i> Add Club
+                </button>
+            </div>
+        </div>
+        
+        <!-- Club Grid -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
+            <!-- Club Card 1 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-800 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">FCP</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Fitness Club Pro</h3>
+                            <p class="text-sm text-gray-600">New York, NY</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">1,245</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">28</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">8</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$45,289</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Manage</a>
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Login as Admin</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Club Card 2 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-red-600 to-red-800 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">YSZ</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Yoga Studio Zen</h3>
+                            <p class="text-sm text-gray-600">Los Angeles, CA</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">867</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">12</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">5</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$32,156</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Manage</a>
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Login as Admin</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Club Card 3 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-yellow-500 to-yellow-700 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">SBA</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Swim Box Aquatics</h3>
+                            <p class="text-sm text-gray-600">Miami, FL</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">3</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Review</a>
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Approve</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Club Card 4 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-green-600 to-green-800 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">CPX</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">CrossFit Peak</h3>
+                            <p class="text-sm text-gray-600">Austin, TX</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">2</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Review</a>
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Approve</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Club Card 5 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-800 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">DAP</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Dance Academy Plus</h3>
+                            <p class="text-sm text-gray-600">Chicago, IL</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Pending
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">4</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">0</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Review</a>
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Approve</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Club Card 6 -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-pink-600 to-pink-800 h-24 flex items-center justify-center">
+                    <span class="text-white text-3xl font-bold">ETC</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Elite Tennis Club</h3>
+                            <p class="text-sm text-gray-600">Seattle, WA</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Inactive
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Members</p>
+                            <p class="font-medium">234</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Staff</p>
+                            <p class="font-medium">8</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Packages</p>
+                            <p class="font-medium">3</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Revenue</p>
+                            <p class="font-medium">$12,450</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                        <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Manage</a>
+                        <a href="#" class="text-sm font-medium text-red-600 hover:text-red-500">Reactivate</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add New Club Card -->
+            <div class="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-6 flex flex-col items-center justify-center text-center hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
+                <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
+                    <i class="fas fa-plus text-indigo-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-1">Add New Club</h3>
+                <p class="text-sm text-gray-500">Create a new club in the platform</p>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6">
+            <div class="flex flex-1 justify-between sm:hidden">
+                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium">1</span> to <span class="font-medium">7</span> of <span class="font-medium">48</span> clubs
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <a href="#" aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            1
+                        </a>
+                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            2
+                        </a>
+                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            3
+                        </a>
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                        <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            7
+                        </a>
+                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // This would be replaced with actual JavaScript functionality in a real implementation
+        console.log('Multi-Tenant Club Management loaded');
+    </script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QR Check-in System - Customer Mobile App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            height: 100vh;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        .status-bar {
+            height: 44px;
+            background-color: #1d4ed8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: white;
+            font-size: 14px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #e5e7eb;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .qr-container {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .nav-item.active {
+            color: #2563eb;
+        }
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 10px;
+            font-size: 10px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+        }
+        .ring-pulse {
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            border: 3px solid #3b82f6;
+        }
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(1.1);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Mobile Status Bar -->
+    <div class="status-bar">
+        <div>9:41 AM</div>
+        <div class="flex space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-md text-white py-4 px-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold">Fitness Club Pro</h1>
+                <p class="text-sm text-blue-100">Premium Membership</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-1 relative">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span class="badge">2</span>
+                </button>
+                <img class="h-10 w-10 rounded-full border-2 border-white" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="p-4">
+        <!-- Membership Card -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-4 mb-6 text-white">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <p class="text-sm text-blue-200">Member</p>
+                    <h3 class="text-lg font-bold">Sarah Johnson</h3>
+                </div>
+                <div class="bg-blue-500 bg-opacity-30 p-2 rounded-lg">
+                    <i class="fas fa-qrcode text-xl"></i>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-blue-200">Membership</p>
+                    <p class="text-sm font-medium">Premium</p>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-200">Status</p>
+                    <div class="flex items-center">
+                        <span class="inline-block w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                        <span class="text-sm font-medium">Active</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-200">Member Since</p>
+                    <p class="text-sm font-medium">Jan 12, 2025</p>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-200">Expires</p>
+                    <p class="text-sm font-medium">July 15, 2025</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="text-center mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">Your QR Code</h2>
+            <p class="text-sm text-gray-600 mb-4">Present this QR code when you arrive at the club</p>
+            
+            <div class="qr-container relative inline-block">
+                <div class="ring-pulse"></div>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=user123456" alt="QR Code" class="w-64 h-64">
+                <p class="text-sm text-gray-500 mt-2">Tap to enlarge</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <button class="bg-white rounded-xl p-4 shadow flex flex-col items-center">
+                <div class="bg-blue-100 rounded-full p-2 mb-2">
+                    <i class="fas fa-calendar-alt text-blue-600"></i>
+                </div>
+                <span class="text-xs text-gray-600">Calendar</span>
+            </button>
+            
+            <button class="bg-white rounded-xl p-4 shadow flex flex-col items-center">
+                <div class="bg-green-100 rounded-full p-2 mb-2">
+                    <i class="fas fa-history text-green-600"></i>
+                </div>
+                <span class="text-xs text-gray-600">History</span>
+            </button>
+            
+            <button class="bg-white rounded-xl p-4 shadow flex flex-col items-center">
+                <div class="bg-purple-100 rounded-full p-2 mb-2">
+                    <i class="fas fa-credit-card text-purple-600"></i>
+                </div>
+                <span class="text-xs text-gray-600">Payment</span>
+            </button>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow p-4 mb-20">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Recent Activity</h3>
+                <button class="text-sm text-blue-600">See All</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-2 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Check-in</p>
+                        <p class="text-xs text-gray-500">Today, 9:32 AM</p>
+                    </div>
+                    <div class="bg-white p-1 rounded-full">
+                        <i class="fas fa-arrow-right text-green-600"></i>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between p-2 border-l-4 border-red-500 bg-red-50 rounded-r-lg">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Check-out</p>
+                        <p class="text-xs text-gray-500">June 12, 5:45 PM</p>
+                    </div>
+                    <div class="bg-white p-1 rounded-full">
+                        <i class="fas fa-arrow-left text-red-600"></i>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between p-2 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Check-in</p>
+                        <p class="text-xs text-gray-500">June 12, 4:15 PM</p>
+                    </div>
+                    <div class="bg-white p-1 rounded-full">
+                        <i class="fas fa-arrow-right text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </div>
+        
+        <div class="nav-item active">
+            <i class="fas fa-qrcode"></i>
+            <span>My QR</span>
+        </div>
+        
+        <div class="nav-item">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Packages</span>
+        </div>
+        
+        <div class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <!-- Modals (Hidden by default) -->
+    <div id="enlarged-qr" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full">
+            <div class="text-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Your QR Code</h3>
+                <p class="text-sm text-gray-600">Show this to club staff</p>
+            </div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=user123456" alt="QR Code" class="w-full h-auto mb-4">
+            <div class="flex space-x-2">
+                <button onclick="document.getElementById('enlarged-qr').classList.add('hidden')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium">
+                    Close
+                </button>
+                <button class="bg-gray-200 px-3 py-2 rounded-lg">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // This would be replaced with actual JavaScript functionality in a real implementation
+        console.log('Customer Mobile App loaded');
+        
+        // Simulate QR code tap
+        document.querySelector('.qr-container').addEventListener('click', function() {
+            document.getElementById('enlarged-qr').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
