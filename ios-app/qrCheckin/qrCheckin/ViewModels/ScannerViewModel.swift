@@ -27,6 +27,10 @@ class ScannerViewModel: ObservableObject {
     @Published var processingCheckin = false
     @Published var lastCheckinResult: CheckinLog?
     
+    // Custom QR Error Alert
+    @Published var showQRErrorAlert = false
+    @Published var qrErrorType: QRErrorType = .unknown("")
+    
     private let graphQLService = GraphQLService.shared
     let scannerService = QRScannerService()
     private let offlineService = OfflineService.shared
@@ -264,10 +268,56 @@ class ScannerViewModel: ObservableObject {
     // MARK: - Error Handling
     private func showError(_ error: AppError) {
         self.error = error
-        alertTitle = "Error"
-        alertMessage = error.localizedDescription
-        showAlert = true
-        showAlert = true
+        
+        // Determine if this is a QR-related error for custom alert
+        let qrErrorType = determineQRErrorType(from: error)
+        
+        if qrErrorType != nil {
+            self.qrErrorType = qrErrorType!
+            showQRErrorAlert = true
+        } else {
+            // Use standard alert for non-QR errors
+            alertTitle = "Error"
+            alertMessage = error.localizedDescription
+            showAlert = true
+        }
+    }
+    
+    private func determineQRErrorType(from error: AppError) -> QRErrorType? {
+        let errorMessage = error.localizedDescription.lowercased()
+        
+        // Check for specific error patterns
+        if errorMessage.contains("invalid") || errorMessage.contains("format") || errorMessage.contains("qr") {
+            return .invalidFormat
+        } else if errorMessage.contains("not found") || errorMessage.contains("member") {
+            return .memberNotFound
+        } else if errorMessage.contains("network") || errorMessage.contains("connection") || errorMessage.contains("timeout") {
+            return .networkError
+        } else if errorMessage.contains("expired") {
+            return .expired
+        } else if errorMessage.contains("already") || errorMessage.contains("checked") {
+            return .alreadyCheckedIn
+        } else if errorMessage.contains("permission") || errorMessage.contains("access") || errorMessage.contains("denied") {
+            return .permissionDenied
+        } else if errorMessage.contains("server error") || errorMessage.contains("graphql") {
+            return .unknown(error.localizedDescription)
+        }
+        
+        // Return nil for non-QR related errors (they'll use standard alert)
+        return nil
+    }
+    
+    func retryQRScan() {
+        showQRErrorAlert = false
+        // Clear the last scanned code so it can be scanned again
+        lastScannedCode = ""
+        // Restart scanning
+        scannerService.startScanning()
+    }
+    
+    func dismissQRError() {
+        showQRErrorAlert = false
+        lastScannedCode = ""
     }
     
     private func showSuccess(_ message: String) {

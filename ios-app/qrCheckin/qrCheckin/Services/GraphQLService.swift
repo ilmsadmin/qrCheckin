@@ -54,22 +54,8 @@ class GraphQLService: ObservableObject {
             ]
         ]
         
-        // Debug: Print login request details
-        print("🔍 DEBUG - Login Request:")
-        print("   Email: \(email)")
-        print("   GraphQL Endpoint: \(Constants.API.graphQLEndpoint)")
-        print("   Query: \(query)")
-        print("   Variables: \(variables)")
-        
         return performQuery(query: query, variables: variables)
             .tryMap { (data: LoginResponse) in
-                // Debug: Print login response data
-                print("🔍 DEBUG - Login Response Data:")
-                print("   Access Token: \(data.login.access_token.prefix(10))...")
-                print("   User ID: \(data.login.user.id)")
-                print("   User Email: \(data.login.user.email)")
-                print("   User Role: \(data.login.user.role)")
-                
                 // Store token for future requests
                 KeychainHelper.shared.save(data.login.access_token, forKey: Constants.Auth.tokenKey)
                 return data.login.user
@@ -151,7 +137,16 @@ class GraphQLService: ObservableObject {
     func performCheckin(qrCodeId: String, eventId: String) -> AnyPublisher<CheckinLog, AppError> {
         let mutation = """
         mutation Checkin($qrCodeId: String!, $eventId: String!) {
-            checkin(qrCodeId: $qrCodeId, eventId: $eventId)
+            checkin(qrCodeId: $qrCodeId, eventId: $eventId) {
+                id
+                userId
+                eventId
+                type
+                timestamp
+                location
+                notes
+                action
+            }
         }
         """
         
@@ -161,13 +156,8 @@ class GraphQLService: ObservableObject {
         ]
         
         return performQuery(query: mutation, variables: variables)
-            .tryMap { (data: CheckinStringResponse) in
-                // Parse JSON string response from backend
-                guard let jsonData = data.checkin.data(using: .utf8) else {
-                    throw AppError.dataError("Invalid response format")
-                }
-                let checkinLog = try JSONDecoder.graphQLDecoder.decode(CheckinLog.self, from: jsonData)
-                return checkinLog
+            .tryMap { (data: CheckinResponse) in
+                return data.checkin
             }
             .mapError { error in
                 if error is AppError {
@@ -181,7 +171,16 @@ class GraphQLService: ObservableObject {
     func performCheckout(qrCodeId: String, eventId: String) -> AnyPublisher<CheckinLog, AppError> {
         let mutation = """
         mutation Checkout($qrCodeId: String!, $eventId: String!) {
-            checkout(qrCodeId: $qrCodeId, eventId: $eventId)
+            checkout(qrCodeId: $qrCodeId, eventId: $eventId) {
+                id
+                userId
+                eventId
+                type
+                timestamp
+                location
+                notes
+                action
+            }
         }
         """
         
@@ -191,13 +190,8 @@ class GraphQLService: ObservableObject {
         ]
         
         return performQuery(query: mutation, variables: variables)
-            .tryMap { (data: CheckoutStringResponse) in
-                // Parse JSON string response from backend
-                guard let jsonData = data.checkout.data(using: .utf8) else {
-                    throw AppError.dataError("Invalid response format")
-                }
-                let checkinLog = try JSONDecoder.graphQLDecoder.decode(CheckinLog.self, from: jsonData)
-                return checkinLog
+            .tryMap { (data: CheckoutResponse) in
+                return data.checkout
             }
             .mapError { error in
                 if error is AppError {
@@ -356,6 +350,144 @@ class GraphQLService: ObservableObject {
             .eraseToAnyPublisher()
     }
     
+    // MARK: - Members Management
+    func fetchMembers(search: String? = nil, status: String? = nil, limit: Int = 50, offset: Int = 0) -> AnyPublisher<[Member], AppError> {
+        let query = """
+        query Members($search: String, $status: String, $limit: Int, $offset: Int) {
+            customers(search: $search, status: $status, limit: $limit, offset: $offset)
+        }
+        """
+        
+        var variables: [String: Any] = [
+            "limit": limit,
+            "offset": offset
+        ]
+        
+        if let search = search, !search.isEmpty {
+            variables["search"] = search
+        }
+        
+        if let status = status, !status.isEmpty {
+            variables["status"] = status
+        }
+        
+        return performQuery(query: query, variables: variables)
+            .tryMap { (data: MembersStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.customers.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                do {
+                    let members = try JSONDecoder.graphQLDecoder.decode([Member].self, from: jsonData)
+                    return members
+                } catch {
+                    print("❌ Member decoding failed: \(error)")
+                    throw AppError.dataError("Failed to decode members: \(error.localizedDescription)")
+                }
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch members: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func fetchMember(id: String) -> AnyPublisher<Member, AppError> {
+        let query = """
+        query Member($id: String!) {
+            customer(id: $id)
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "id": id
+        ]
+        
+        return performQuery(query: query, variables: variables)
+            .tryMap { (data: MemberStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.customer.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let member = try JSONDecoder.graphQLDecoder.decode(Member.self, from: jsonData)
+                return member
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch member: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func fetchMemberStats() -> AnyPublisher<MemberStats, AppError> {
+        let query = """
+        query CustomerStats {
+            customerStats
+        }
+        """
+        
+        return performQuery(query: query, variables: [:])
+            .tryMap { (data: MemberStatsStringResponse) in
+                // Parse JSON string response from backend
+                guard let jsonData = data.customerStats.data(using: .utf8) else {
+                    throw AppError.dataError("Invalid response format")
+                }
+                let stats = try JSONDecoder.graphQLDecoder.decode(MemberStats.self, from: jsonData)
+                return stats
+            }
+            .mapError { error in
+                if error is AppError {
+                    return error as! AppError
+                }
+                return AppError.networkError("Failed to fetch member stats: \(error.localizedDescription)")
+            }
+            .eraseToAnyPublisher()
+    }
+
+    // MARK: - Async Methods for Members
+    func fetchMembersAsync(searchText: String? = nil, status: MemberStatus? = nil, offset: Int = 0, limit: Int = 50) async throws -> [Member] {
+        return try await withCheckedThrowingContinuation { continuation in
+            fetchMembers(
+                search: searchText,
+                status: status?.rawValue,
+                limit: limit,
+                offset: offset
+            )
+            .sink(
+                receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        continuation.resume(throwing: error)
+                    }
+                },
+                receiveValue: { members in
+                    continuation.resume(returning: members)
+                }
+            )
+            .store(in: &cancellables)
+        }
+    }
+    
+    func fetchMemberStatsAsync() async throws -> MemberStats {
+        return try await withCheckedThrowingContinuation { continuation in
+            fetchMemberStats()
+                .sink(
+                    receiveCompletion: { completion in
+                        if case .failure(let error) = completion {
+                            continuation.resume(throwing: error)
+                        }
+                    },
+                    receiveValue: { stats in
+                        continuation.resume(returning: stats)
+                    }
+                )
+                .store(in: &cancellables)
+        }
+    }
+
     // MARK: - Generic Query Execution
     private func performQuery<T: Codable>(query: String, variables: [String: Any]) -> AnyPublisher<T, AppError> {
         guard let url = URL(string: Constants.API.graphQLEndpoint) else {
@@ -368,8 +500,12 @@ class GraphQLService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // Add authorization header if token exists
-        if let token = KeychainHelper.shared.load(forKey: Constants.Auth.tokenKey) {
+        let token = KeychainHelper.shared.load(forKey: Constants.Auth.tokenKey)
+        if let token = token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("🔑 Using auth token: \(String(token.prefix(20)))...")
+        } else {
+            print("⚠️ No auth token found in keychain")
         }
         
         let body: [String: Any] = [
@@ -377,77 +513,32 @@ class GraphQLService: ObservableObject {
             "variables": variables
         ]
         
-        // Debug: Print request details
-        print("🔍 DEBUG - API Request:")
-        print("   URL: \(url)")
-        print("   Method: POST")
-        print("   Headers: \(request.allHTTPHeaderFields ?? [:])")
+        print("📤 GraphQL Request URL: \(url)")
+        print("📤 GraphQL Query: \(query.prefix(100))...")
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            // Debug: Print request body
-            if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
-                print("   Body: \(bodyString)")
-            }
         } catch {
-            print("❌ DEBUG - Failed to serialize request body: \(error)")
             return Fail(error: AppError.dataError("Failed to serialize request body"))
                 .eraseToAnyPublisher()
         }
         
         return session.dataTaskPublisher(for: request)
-            .map { data, response in
-                // Debug: Print raw response data
-                print("🔍 DEBUG - Raw API Response:")
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("   Status Code: \(httpResponse.statusCode)")
-                    print("   Headers: \(httpResponse.allHeaderFields)")
-                }
-                print("   Raw Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
-                return data
-            }
+            .map(\.data)
             .decode(type: GraphQLResponse<T>.self, decoder: JSONDecoder.graphQLDecoder)
-            .mapError { error in
-                // Debug: Print JSON decoding errors
-                if let decodingError = error as? DecodingError {
-                    print("❌ DEBUG - JSON Decoding Error:")
-                    switch decodingError {
-                    case .dataCorrupted(let context):
-                        print("   Data corrupted: \(context.debugDescription)")
-                        print("   Coding path: \(context.codingPath)")
-                    case .keyNotFound(let key, let context):
-                        print("   Key not found: \(key.stringValue)")
-                        print("   Context: \(context.debugDescription)")
-                        print("   Coding path: \(context.codingPath)")
-                    case .typeMismatch(let type, let context):
-                        print("   Type mismatch for type: \(type)")
-                        print("   Context: \(context.debugDescription)")
-                        print("   Coding path: \(context.codingPath)")
-                    case .valueNotFound(let type, let context):
-                        print("   Value not found for type: \(type)")
-                        print("   Context: \(context.debugDescription)")
-                        print("   Coding path: \(context.codingPath)")
-                    @unknown default:
-                        print("   Unknown decoding error: \(decodingError)")
-                    }
-                }
-                return error
-            }
             .tryMap { response in
-                // Debug: Print parsed response
-                print("🔍 DEBUG - Parsed GraphQL Response:")
-                print("   Data: \(String(describing: response.data))")
-                print("   Errors: \(String(describing: response.errors))")
+                print("📥 GraphQL Response received")
                 
                 if let errors = response.errors, !errors.isEmpty {
                     let errorMessage = errors.first?.message ?? "GraphQL error"
-                    print("❌ DEBUG - GraphQL Error: \(errorMessage)")
+                    print("❌ GraphQL errors: \(errors)")
                     throw AppError.networkError("Server error: \(errorMessage)")
                 }
                 guard let data = response.data else {
-                    print("❌ DEBUG - No data received from server")
+                    print("❌ No data in GraphQL response")
                     throw AppError.dataError("No data received from server")
                 }
+                print("✅ GraphQL response data received successfully")
                 return data
             }
             .mapError { error in
@@ -514,12 +605,12 @@ private struct EventsStringResponse: Codable {
     let events: String
 }
 
-private struct CheckinStringResponse: Codable {
-    let checkin: String
+private struct CheckinResponse: Codable {
+    let checkin: CheckinLog
 }
 
-private struct CheckoutStringResponse: Codable {
-    let checkout: String
+private struct CheckoutResponse: Codable {
+    let checkout: CheckinLog
 }
 
 private struct CheckinLogsStringResponse: Codable {
@@ -540,6 +631,18 @@ private struct CustomerCheckinHistoryResponse: Codable {
 
 private struct SubscriptionPackagesResponse: Codable {
     let subscriptionPackages: [SubscriptionPackage]
+}
+
+private struct MembersStringResponse: Codable {
+    let customers: String
+}
+
+private struct MemberStringResponse: Codable {
+    let customer: String
+}
+
+private struct MemberStatsStringResponse: Codable {
+    let customerStats: String
 }
 
 // MARK: - JSONDecoder Extension

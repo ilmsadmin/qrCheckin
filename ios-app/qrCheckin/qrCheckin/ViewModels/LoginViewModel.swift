@@ -26,41 +26,33 @@ class LoginViewModel: ObservableObject {
     }
     
     func login(email: String, password: String) {
-        guard !email.isEmpty && !password.isEmpty else {
+        // Trim whitespace from email and password
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedEmail.isEmpty && !trimmedPassword.isEmpty else {
             showError("Please enter both email and password")
             return
         }
         
         // Validate email format
-        guard email.contains("@") && email.contains(".") else {
+        guard trimmedEmail.contains("@") && trimmedEmail.contains(".") else {
             showError("Please enter a valid email address")
             return
         }
         
         isLoading = true
         
-        graphQLService.login(email: email, password: password)
+        graphQLService.login(email: trimmedEmail, password: trimmedPassword)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] (completion: Subscribers.Completion<AppError>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
-                        // Debug: Print detailed error information
-                        print("❌ DEBUG - Login Error:")
-                        print("   Error Type: \(error)")
-                        print("   Error Description: \(error.localizedDescription)")
-                        print("   Error Details: \(String(describing: error))")
-                        
                         self?.handleAuthenticationError(error)
                     }
                 },
                 receiveValue: { [weak self] (user: User) in
-                    // Debug: Print successful login
-                    print("✅ DEBUG - Login Success:")
-                    print("   User ID: \(user.id)")
-                    print("   User Email: \(user.email)")
-                    print("   User Role: \(user.role)")
-                    print("   User Active: \(user.isActive)")
                     
                     self?.currentUser = user
                     self?.isLoggedIn = true
@@ -79,9 +71,8 @@ class LoginViewModel: ObservableObject {
                 receiveCompletion: { [weak self] (completion: Subscribers.Completion<AppError>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
-                        print("Logout error: \(error.localizedDescription)")
+                        // Logout locally even if server request fails
                     }
-                    // Logout locally even if server request fails
                     self?.performLocalLogout()
                 },
                 receiveValue: { [weak self] (_: Bool) in
@@ -111,7 +102,6 @@ class LoginViewModel: ObservableObject {
                     receiveCompletion: { [weak self] completion in
                         if case .failure(let error) = completion {
                             // Token is invalid, clear it and cached data
-                            print("Token validation failed: \(error.localizedDescription)")
                             self?.clearUserData()
                             self?.currentUser = nil
                             self?.isLoggedIn = false

@@ -69,6 +69,7 @@ class QRScannerService: NSObject, ObservableObject {
             setupCaptureSession()
         }
         
+        // Move camera session start to background thread to avoid UI blocking
         DispatchQueue.global(qos: .background).async { [weak self] in
             self?.captureSession?.startRunning()
             DispatchQueue.main.async {
@@ -78,8 +79,24 @@ class QRScannerService: NSObject, ObservableObject {
     }
     
     func stopScanning() {
-        captureSession?.stopRunning()
-        isScanning = false
+        // Move camera session stop to background thread
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+            
+            // Clean up delegate references before stopping
+            if let session = self.captureSession {
+                for output in session.outputs {
+                    if let metadataOutput = output as? AVCaptureMetadataOutput {
+                        metadataOutput.setMetadataObjectsDelegate(nil, queue: nil)
+                    }
+                }
+                session.stopRunning()
+            }
+            
+            DispatchQueue.main.async {
+                self.isScanning = false
+            }
+        }
     }
     
     private func setupCaptureSession() {
@@ -219,13 +236,24 @@ class QRScannerService: NSObject, ObservableObject {
         // Temporarily stop scanning to process result
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             if self?.isScanning == true {
-                self?.captureSession?.startRunning()
+                // Restart camera session on background thread
+                DispatchQueue.global(qos: .background).async {
+                    self?.captureSession?.startRunning()
+                }
             }
         }
     }
     
     // MARK: - Cleanup
     deinit {
+        // Properly clean up the delegate reference to prevent weak reference warnings
+        if let session = captureSession {
+            for output in session.outputs {
+                if let metadataOutput = output as? AVCaptureMetadataOutput {
+                    metadataOutput.setMetadataObjectsDelegate(nil, queue: nil)
+                }
+            }
+        }
         stopScanning()
     }
 }
@@ -241,7 +269,9 @@ extension QRScannerService: AVCaptureMetadataOutputObjectsDelegate {
         }
         
         // Temporarily stop running to prevent multiple rapid scans
-        captureSession?.stopRunning()
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            self?.captureSession?.stopRunning()
+        }
         
         processScannedCode(code)
     }

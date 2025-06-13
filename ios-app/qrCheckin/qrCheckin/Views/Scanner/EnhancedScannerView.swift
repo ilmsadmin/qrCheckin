@@ -44,6 +44,35 @@ struct EnhancedScannerView: View {
         } message: {
             Text(viewModel.alertMessage)
         }
+        .overlay(
+            // Custom QR Error Alert
+            Group {
+                if viewModel.showQRErrorAlert {
+                    ZStack {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                viewModel.dismissQRError()
+                            }
+                        
+                        QRErrorAlertView(
+                            errorType: viewModel.qrErrorType,
+                            onRetry: {
+                                viewModel.retryQRScan()
+                            },
+                            onDismiss: {
+                                viewModel.dismissQRError()
+                            }
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                    }
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: viewModel.showQRErrorAlert)
+                }
+            }
+        )
         .sheet(isPresented: $showManualInput) {
             manualInputView
         }
@@ -81,16 +110,13 @@ struct EnhancedScannerView: View {
     // MARK: - Scanner Area
     private var scannerAreaView: some View {
         ZStack {
-            // Camera background simulation
-            AsyncImage(url: URL(string: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Rectangle()
-                    .fill(Color.black)
-            }
-            .opacity(0.4)
+            // Background
+            Color.black
+            
+            // Camera Preview - đặt chính xác cùng kích thước với khung QR
+            CameraPreviewView(scannerService: viewModel.scannerService)
+                .frame(width: UIScreen.main.bounds.width * 0.8, height: 250)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             
             // Scanner overlay
             scannerOverlay
@@ -130,9 +156,9 @@ struct EnhancedScannerView: View {
                 )
                 .compositingGroup()
             
-            // Scanner frame
+            // Scanner frame - chỉ hiển thị viền, không làm mờ camera
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
+                .stroke(Color.blue.opacity(0.8), lineWidth: 3)
                 .frame(width: UIScreen.main.bounds.width * 0.8, height: 250)
                 .overlay(
                     scannerAnimation
@@ -147,6 +173,7 @@ struct EnhancedScannerView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .padding(.top, 180)
+                    .shadow(color: .black, radius: 2)
                 
                 Spacer()
             }

@@ -15,16 +15,25 @@ struct SubscriptionPackage: Identifiable, Codable {
     let price: Double
     let discountPrice: Double?
     let features: [String]
-    let checkinLimit: Int?
+    let maxCheckins: Int?
     let isPopular: Bool
+    let isFeatured: Bool?
     let sortOrder: Int
     let isActive: Bool
+    let image: String?
+    let color: String?
+    let terms: String?
+    let refundPolicy: String?
     let createdAt: Date
     let updatedAt: Date
     let type: SubscriptionType
     
-    // Additional fields from the other declaration
-    let durationDays: Int
+    // Additional fields from the other declaration  
+    let duration: Int
+    
+    // Computed properties for backward compatibility
+    var durationDays: Int { duration }
+    var checkinLimit: Int? { maxCheckins }
     
     // Computed properties
     var formattedPrice: String {
@@ -69,8 +78,10 @@ struct SubscriptionPackage: Identifiable, Codable {
     // Helper initializer for MockDataService compatibility
     init(id: String, name: String, description: String?, clubId: String, 
          type: SubscriptionType, price: Double, discountPrice: Double? = nil, 
-         features: [String] = [], checkinLimit: Int? = nil, isPopular: Bool = false,
-         sortOrder: Int = 0, isActive: Bool = true, durationDays: Int = 30,
+         features: [String] = [], maxCheckins: Int? = nil, isPopular: Bool = false,
+         isFeatured: Bool? = nil, sortOrder: Int = 0, isActive: Bool = true, 
+         image: String? = nil, color: String? = nil, terms: String? = nil, 
+         refundPolicy: String? = nil, duration: Int = 30,
          createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.name = name
@@ -80,11 +91,16 @@ struct SubscriptionPackage: Identifiable, Codable {
         self.price = price
         self.discountPrice = discountPrice
         self.features = features
-        self.checkinLimit = checkinLimit
+        self.maxCheckins = maxCheckins
         self.isPopular = isPopular
+        self.isFeatured = isFeatured
         self.sortOrder = sortOrder
         self.isActive = isActive
-        self.durationDays = durationDays
+        self.image = image
+        self.color = color
+        self.terms = terms
+        self.refundPolicy = refundPolicy
+        self.duration = duration
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

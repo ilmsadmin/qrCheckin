@@ -14,7 +14,8 @@ enum CheckinType: String, CaseIterable, Codable {
 
 struct CheckinLog: Identifiable, Codable {
     let id: String
-    let userId: String
+    let userId: String?
+    let customerId: String?
     let eventId: String
     let subscriptionId: String?
     let qrCodeId: String?
@@ -22,28 +23,37 @@ struct CheckinLog: Identifiable, Codable {
     let timestamp: Date
     let location: String?
     let notes: String?
+    let action: String?
     
     // Related data (populated when fetched with relations)
     var user: User?
     var event: Event?
+    
+    // Computed property for backward compatibility
+    var effectiveUserId: String {
+        return userId ?? customerId ?? ""
+    }
     
     // For backward compatibility with some mock data
     init(id: String, eventId: String, userId: String, timestamp: Date, status: String) {
         self.id = id
         self.eventId = eventId
         self.userId = userId
+        self.customerId = nil
         self.timestamp = timestamp
         self.subscriptionId = nil
         self.qrCodeId = nil
         self.type = status == "CHECKED_IN" ? .checkin : .checkout
         self.location = nil
         self.notes = nil
+        self.action = nil
     }
     
     // Add a custom initializer for CheckinLog that includes all needed properties
-    init(id: String, userId: String, eventId: String, subscriptionId: String? = nil, qrCodeId: String?, type: CheckinType, timestamp: Date, location: String? = nil, notes: String? = nil, user: User? = nil, event: Event? = nil) {
+    init(id: String, userId: String? = nil, customerId: String? = nil, eventId: String, subscriptionId: String? = nil, qrCodeId: String?, type: CheckinType, timestamp: Date, location: String? = nil, notes: String? = nil, action: String? = nil, user: User? = nil, event: Event? = nil) {
         self.id = id
         self.userId = userId
+        self.customerId = customerId
         self.eventId = eventId
         self.subscriptionId = subscriptionId
         self.qrCodeId = qrCodeId
@@ -51,6 +61,7 @@ struct CheckinLog: Identifiable, Codable {
         self.timestamp = timestamp
         self.location = location
         self.notes = notes
+        self.action = action
         self.user = user
         self.event = event
     }
