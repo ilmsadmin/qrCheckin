@@ -22,7 +22,7 @@ struct ScannerView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         // Header
-                        //headerView
+                        headerView
                         
                         // Offline Status Banner
                         if !offlineService.isOnline {
@@ -51,12 +51,7 @@ struct ScannerView: View {
                     }
                     .padding()
                 }
-                .safeAreaInset(edge: .top) {
-                    // Tạo khoảng trống chính xác cho status bar + 10pt
-                    Spacer()
-                        .frame(height: 10)
-                        .background(Color(.systemBackground))
-                }
+                .padding(.top, 10) // Thêm padding top thay vì safeAreaInset
                 
                 // Loading Overlay
                 if viewModel.isLoading || viewModel.processingCheckin {
@@ -82,7 +77,7 @@ struct ScannerView: View {
         }
     }
     
-    /*
+    
     // MARK: - Header
     private var headerView: some View {
         HStack {
@@ -98,7 +93,7 @@ struct ScannerView: View {
             Spacer()
         }
     }
-    */
+    
     // MARK: - Offline Status Banner
     private var offlineStatusBanner: some View {
         HStack {

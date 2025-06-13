@@ -77,7 +77,9 @@ struct RecentCheckinRowView: View {
                     role: .user,
                     isActive: true,
                     createdAt: Date(),
-                    updatedAt: Date()
+                    updatedAt: Date(),
+                    phone: nil,
+                    dateOfBirth: nil
                 ),
                 event: Event(
                     id: "event1",
@@ -115,7 +117,9 @@ struct RecentCheckinRowView: View {
                     role: .user,
                     isActive: true,
                     createdAt: Date(),
-                    updatedAt: Date()
+                    updatedAt: Date(),
+                    phone: nil,
+                    dateOfBirth: nil
                 ),
                 event: Event(
                     id: "event1",

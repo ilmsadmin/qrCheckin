@@ -78,3 +78,13 @@ struct CheckinLog: Identifiable, Codable {
         }
     }
 }
+
+extension CheckinLog: Equatable {
+    static func == (lhs: CheckinLog, rhs: CheckinLog) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.userId == rhs.userId &&
+               lhs.eventId == rhs.eventId &&
+               lhs.type == rhs.type &&
+               lhs.timestamp == rhs.timestamp
+    }
+}

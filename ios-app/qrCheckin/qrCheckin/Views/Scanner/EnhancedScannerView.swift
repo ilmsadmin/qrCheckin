@@ -21,9 +21,6 @@ struct EnhancedScannerView: View {
             Color.black.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Status bar
-                statusBarView
-                
                 // Header
                 headerView
                 
@@ -61,28 +58,6 @@ struct EnhancedScannerView: View {
         }
     }
     
-    // MARK: - Status Bar
-    private var statusBarView: some View {
-        HStack {
-            Text("9:41 AM")
-                .foregroundColor(.white)
-                .font(.system(size: 14, weight: .semibold))
-            
-            Spacer()
-            
-            HStack(spacing: 8) {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                Image(systemName: "wifi")
-                Image(systemName: "battery.100")
-            }
-            .foregroundColor(.white)
-            .font(.system(size: 12))
-        }
-        .padding(.horizontal)
-        .frame(height: 44)
-        .background(Color.blue.opacity(0.9))
-    }
-    
     // MARK: - Header
     private var headerView: some View {
         HStack {
@@ -98,26 +73,6 @@ struct EnhancedScannerView: View {
             }
             
             Spacer()
-            
-            HStack(spacing: 16) {
-                Button(action: {}) {
-                    Image(systemName: "bell.fill")
-                        .font(.title3)
-                        .foregroundColor(.white)
-                }
-                
-                // Staff profile image
-                AsyncImage(url: URL(string: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80")) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                }
-                .frame(width: 32, height: 32)
-                .clipShape(Circle())
-            }
         }
         .padding()
         .background(Color.blue.opacity(0.9))

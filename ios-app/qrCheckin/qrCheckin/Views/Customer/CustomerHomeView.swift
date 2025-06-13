@@ -84,27 +84,6 @@ struct CustomerHomeView: View {
     // MARK: - Header
     private var headerView: some View {
         VStack(spacing: 0) {
-            // Status bar spacer
-            Rectangle()
-                .fill(Color.blue)
-                .frame(height: 44)
-                .overlay(
-                    HStack {
-                        Text("9:41 AM")
-                            .foregroundColor(.white)
-                            .font(.system(size: 14, weight: .semibold))
-                        Spacer()
-                        HStack(spacing: 8) {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                            Image(systemName: "wifi")
-                            Image(systemName: "battery.100")
-                        }
-                        .foregroundColor(.white)
-                        .font(.system(size: 12))
-                    }
-                    .padding(.horizontal)
-                )
-            
             // Main header
             LinearGradient(
                 gradient: Gradient(colors: [Color.blue, Color.indigo]),
@@ -370,16 +349,16 @@ struct CustomerHomeView: View {
         HStack {
             // Activity type indicator
             RoundedRectangle(cornerRadius: 4)
-                .fill(checkin.type == "CHECKIN" ? Color.green : Color.red)
+                .fill(checkin.type == .checkin ? Color.green : Color.red)
                 .frame(width: 4, height: 40)
             
             RoundedRectangle(cornerRadius: 8)
-                .fill((checkin.type == "CHECKIN" ? Color.green : Color.red).opacity(0.1))
+                .fill((checkin.type == .checkin ? Color.green : Color.red).opacity(0.1))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .overlay(
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(checkin.type == "CHECKIN" ? "Check-in" : "Check-out")
+                            Text(checkin.type == .checkin ? "Check-in" : "Check-out")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)
@@ -395,9 +374,9 @@ struct CustomerHomeView: View {
                             .fill(Color(.systemBackground))
                             .frame(width: 32, height: 32)
                             .overlay(
-                                Image(systemName: checkin.type == "CHECKIN" ? "arrow.right" : "arrow.left")
+                                Image(systemName: checkin.type == .checkin ? "arrow.right" : "arrow.left")
                                     .font(.caption)
-                                    .foregroundColor(checkin.type == "CHECKIN" ? .green : .red)
+                                    .foregroundColor(checkin.type == .checkin ? .green : .red)
                             )
                     }
                     .padding(.horizontal, 12)

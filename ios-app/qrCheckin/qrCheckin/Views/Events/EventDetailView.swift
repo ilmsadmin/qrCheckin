@@ -237,7 +237,9 @@ struct EventDetailView: View {
                 role: .user,
                 isActive: true,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                phone: "+1234567890",
+                dateOfBirth: nil
             ),
             User(
                 id: "user_002",
@@ -248,7 +250,9 @@ struct EventDetailView: View {
                 role: .user,
                 isActive: true,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                phone: "+1987654321",
+                dateOfBirth: nil
             )
         ]
         

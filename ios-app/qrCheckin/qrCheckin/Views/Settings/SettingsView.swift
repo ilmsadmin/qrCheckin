@@ -149,6 +149,10 @@ struct SettingsView: View {
             return .blue
         case .user:
             return .green
+        case .customer:
+            return .orange
+        case .systemAdmin:
+            return .purple
         }
     }
 }

@@ -12,13 +12,18 @@ enum UserRole: String, CaseIterable, Codable {
     case staff = "STAFF"
     case user = "USER"
     case customer = "CUSTOMER"
+    case systemAdmin = "SYSTEM_ADMIN"
     
     var isStaff: Bool {
-        return self == .admin || self == .staff
+        return self == .admin || self == .staff || self == .systemAdmin
     }
     
     var isCustomer: Bool {
         return self == .customer || self == .user
+    }
+    
+    var isSystemAdmin: Bool {
+        return self == .systemAdmin
     }
 }
 
@@ -38,7 +43,8 @@ struct User: Identifiable, Codable {
     let dateOfBirth: Date?
     
     // Associated data for customers
-    var activeSubscription: Subscription?
+    // Breaking the recursive relationship by using a class wrapper
+    var activeSubscription: SubscriptionReference?
     var qrCode: String?
     
     var fullName: String {
@@ -73,6 +79,40 @@ struct User: Identifiable, Codable {
     }
 }
 
+// MARK: - Subscription Reference Class
+// This class wrapper breaks the recursive relationship
+final class SubscriptionReference: Codable {
+    let subscription: Subscription
+    
+    init(subscription: Subscription) {
+        self.subscription = subscription
+    }
+    
+    // Convenience accessors
+    var id: String { subscription.id }
+    var isActive: Bool { subscription.isActive }
+    var isExpired: Bool { subscription.isExpired }
+    var package: SubscriptionPackage? { subscription.package }
+    var startDate: Date { subscription.startDate }
+    var endDate: Date { subscription.endDate }
+    var daysRemaining: Int { subscription.daysRemaining }
+    
+    // Codable implementation
+    enum CodingKeys: String, CodingKey {
+        case subscription
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        subscription = try container.decode(Subscription.self, forKey: .subscription)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(subscription, forKey: .subscription)
+    }
+}
+
 // MARK: - Codable Extension
 extension User {
     enum CodingKeys: String, CodingKey {
@@ -98,7 +138,11 @@ extension User {
         dateOfBirth = try container.decodeIfPresent(Date.self, forKey: .dateOfBirth)
         
         // Associated data (may be nil)
-        activeSubscription = try container.decodeIfPresent(Subscription.self, forKey: .activeSubscription)
+        if let subscriptionData = try container.decodeIfPresent(Subscription.self, forKey: .activeSubscription) {
+            activeSubscription = SubscriptionReference(subscription: subscriptionData)
+        } else {
+            activeSubscription = nil
+        }
         qrCode = try container.decodeIfPresent(String.self, forKey: .qrCode)
     }
     
@@ -120,7 +164,9 @@ extension User {
         try container.encodeIfPresent(dateOfBirth, forKey: .dateOfBirth)
         
         // Associated data
-        try container.encodeIfPresent(activeSubscription, forKey: .activeSubscription)
+        if let activeSubscription = activeSubscription {
+            try container.encode(activeSubscription.subscription, forKey: .activeSubscription)
+        }
         try container.encodeIfPresent(qrCode, forKey: .qrCode)
     }
 }

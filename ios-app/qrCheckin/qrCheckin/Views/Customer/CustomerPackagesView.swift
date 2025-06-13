@@ -30,8 +30,8 @@ struct CustomerPackagesView: View {
                     
                     // Current Subscription
                     if let profile = viewModel.customerProfile,
-                       let subscription = profile.activeSubscription {
-                        currentSubscriptionCard(subscription: subscription)
+                       let subscriptionRef = profile.activeSubscription {
+                        currentSubscriptionCard(subscription: subscriptionRef.subscription)
                     }
                     
                     // Available Packages
@@ -178,7 +178,8 @@ struct CustomerPackagesView: View {
             }
             
             // Features
-            if let features = package.features, !features.isEmpty {
+            let features = package.features ?? []
+            if !features.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Features")
                         .font(.subheadline)

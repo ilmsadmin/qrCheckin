@@ -25,7 +25,9 @@ class MockDataService {
                 role: .user,
                 isActive: true,
                 createdAt: Date(timeIntervalSince1970: 1705306200),
-                updatedAt: Date(timeIntervalSince1970: 1705306200)
+                updatedAt: Date(timeIntervalSince1970: 1705306200),
+                phone: "+1234567890",
+                dateOfBirth: Date(timeIntervalSince1970: 631152000) // Jan 1, 1990
             ),
             User(
                 id: "user_002",
@@ -36,7 +38,9 @@ class MockDataService {
                 role: .staff,
                 isActive: true,
                 createdAt: Date(timeIntervalSince1970: 1705397100),
-                updatedAt: Date(timeIntervalSince1970: 1705397100)
+                updatedAt: Date(timeIntervalSince1970: 1705397100),
+                phone: "+1987654321",
+                dateOfBirth: Date(timeIntervalSince1970: 662688000) // Jan 1, 1991
             ),
             User(
                 id: "user_003",
@@ -47,7 +51,9 @@ class MockDataService {
                 role: .admin,
                 isActive: true,
                 createdAt: Date(timeIntervalSince1970: 1704067200),
-                updatedAt: Date(timeIntervalSince1970: 1704067200)
+                updatedAt: Date(timeIntervalSince1970: 1704067200),
+                phone: nil,
+                dateOfBirth: nil
             )
         ]
         
@@ -217,7 +223,9 @@ class MockDataService {
                 role: .staff,
                 isActive: true,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                phone: "+1555123456",
+                dateOfBirth: nil
             )
             return Just(user)
                 .setFailureType(to: Error.self)

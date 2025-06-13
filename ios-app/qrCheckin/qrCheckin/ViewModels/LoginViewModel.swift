@@ -45,10 +45,23 @@ class LoginViewModel: ObservableObject {
                 receiveCompletion: { [weak self] (completion: Subscribers.Completion<AppError>) in
                     self?.isLoading = false
                     if case .failure(let error) = completion {
+                        // Debug: Print detailed error information
+                        print("❌ DEBUG - Login Error:")
+                        print("   Error Type: \(error)")
+                        print("   Error Description: \(error.localizedDescription)")
+                        print("   Error Details: \(String(describing: error))")
+                        
                         self?.handleAuthenticationError(error)
                     }
                 },
                 receiveValue: { [weak self] (user: User) in
+                    // Debug: Print successful login
+                    print("✅ DEBUG - Login Success:")
+                    print("   User ID: \(user.id)")
+                    print("   User Email: \(user.email)")
+                    print("   User Role: \(user.role)")
+                    print("   User Active: \(user.isActive)")
+                    
                     self?.currentUser = user
                     self?.isLoggedIn = true
                     self?.saveUserData(user)

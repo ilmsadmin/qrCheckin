@@ -54,8 +54,22 @@ class GraphQLService: ObservableObject {
             ]
         ]
         
+        // Debug: Print login request details
+        print("🔍 DEBUG - Login Request:")
+        print("   Email: \(email)")
+        print("   GraphQL Endpoint: \(Constants.API.graphQLEndpoint)")
+        print("   Query: \(query)")
+        print("   Variables: \(variables)")
+        
         return performQuery(query: query, variables: variables)
             .tryMap { (data: LoginResponse) in
+                // Debug: Print login response data
+                print("🔍 DEBUG - Login Response Data:")
+                print("   Access Token: \(data.login.access_token.prefix(10))...")
+                print("   User ID: \(data.login.user.id)")
+                print("   User Email: \(data.login.user.email)")
+                print("   User Role: \(data.login.user.role)")
+                
                 // Store token for future requests
                 KeychainHelper.shared.save(data.login.access_token, forKey: Constants.Auth.tokenKey)
                 return data.login.user
@@ -363,22 +377,75 @@ class GraphQLService: ObservableObject {
             "variables": variables
         ]
         
+        // Debug: Print request details
+        print("🔍 DEBUG - API Request:")
+        print("   URL: \(url)")
+        print("   Method: POST")
+        print("   Headers: \(request.allHTTPHeaderFields ?? [:])")
+        
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            // Debug: Print request body
+            if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
+                print("   Body: \(bodyString)")
+            }
         } catch {
+            print("❌ DEBUG - Failed to serialize request body: \(error)")
             return Fail(error: AppError.dataError("Failed to serialize request body"))
                 .eraseToAnyPublisher()
         }
         
         return session.dataTaskPublisher(for: request)
-            .map(\.data)
+            .map { data, response in
+                // Debug: Print raw response data
+                print("🔍 DEBUG - Raw API Response:")
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("   Status Code: \(httpResponse.statusCode)")
+                    print("   Headers: \(httpResponse.allHeaderFields)")
+                }
+                print("   Raw Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
+                return data
+            }
             .decode(type: GraphQLResponse<T>.self, decoder: JSONDecoder.graphQLDecoder)
+            .mapError { error in
+                // Debug: Print JSON decoding errors
+                if let decodingError = error as? DecodingError {
+                    print("❌ DEBUG - JSON Decoding Error:")
+                    switch decodingError {
+                    case .dataCorrupted(let context):
+                        print("   Data corrupted: \(context.debugDescription)")
+                        print("   Coding path: \(context.codingPath)")
+                    case .keyNotFound(let key, let context):
+                        print("   Key not found: \(key.stringValue)")
+                        print("   Context: \(context.debugDescription)")
+                        print("   Coding path: \(context.codingPath)")
+                    case .typeMismatch(let type, let context):
+                        print("   Type mismatch for type: \(type)")
+                        print("   Context: \(context.debugDescription)")
+                        print("   Coding path: \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("   Value not found for type: \(type)")
+                        print("   Context: \(context.debugDescription)")
+                        print("   Coding path: \(context.codingPath)")
+                    @unknown default:
+                        print("   Unknown decoding error: \(decodingError)")
+                    }
+                }
+                return error
+            }
             .tryMap { response in
+                // Debug: Print parsed response
+                print("🔍 DEBUG - Parsed GraphQL Response:")
+                print("   Data: \(String(describing: response.data))")
+                print("   Errors: \(String(describing: response.errors))")
+                
                 if let errors = response.errors, !errors.isEmpty {
                     let errorMessage = errors.first?.message ?? "GraphQL error"
+                    print("❌ DEBUG - GraphQL Error: \(errorMessage)")
                     throw AppError.networkError("Server error: \(errorMessage)")
                 }
                 guard let data = response.data else {
+                    print("❌ DEBUG - No data received from server")
                     throw AppError.dataError("No data received from server")
                 }
                 return data

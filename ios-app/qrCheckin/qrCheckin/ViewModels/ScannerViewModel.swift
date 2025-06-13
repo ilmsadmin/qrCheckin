@@ -130,7 +130,7 @@ class ScannerViewModel: ObservableObject {
     private func determineCheckinType(for code: String) {
         // Check if user recently checked in for current event
         let recentCheckin = recentCheckins.first { checkin in
-            checkin.qrCodeId == code && 
+            checkin.qrCodeId == code &&
             checkin.eventId == selectedEvent?.id &&
             checkin.timestamp.timeIntervalSinceNow > -3600 // Within last hour
         }
@@ -225,7 +225,9 @@ class ScannerViewModel: ObservableObject {
                 role: .user,
                 isActive: true,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                phone: nil,
+                dateOfBirth: nil
             ),
             event: event
         )
