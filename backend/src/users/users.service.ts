@@ -58,10 +58,24 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    // Check if user already has an active subscription with QR code
-    let userSubscription = await this.prisma.subscription.findFirst({
+    // In the new B2B model, Users are staff members, not customers
+    // This method should probably be renamed or moved to a customer service
+    // For now, I'll find a customer with the same email as the user
+    const customer = await this.prisma.customer.findFirst({
       where: {
-        userId,
+        email: user.email,
+        isActive: true,
+      },
+    });
+
+    if (!customer) {
+      throw new Error('Customer not found for this user');
+    }
+
+    // Check if customer has an active subscription with QR code
+    let customerSubscription = await this.prisma.subscription.findFirst({
+      where: {
+        customerId: customer.id,
         isActive: true,
         endDate: { gt: new Date() },
       },
@@ -74,9 +88,9 @@ export class UsersService {
       },
     });
 
-    // If user has an active subscription with QR code, return the existing QR code
-    if (userSubscription && userSubscription.qrCodes.length > 0) {
-      const existingQRCode = userSubscription.qrCodes[0];
+    // If customer has an active subscription with QR code, return the existing QR code
+    if (customerSubscription && customerSubscription.qrCodes.length > 0) {
+      const existingQRCode = customerSubscription.qrCodes[0];
       return {
         id: existingQRCode.id,
         qrCode: existingQRCode.code,
@@ -87,8 +101,8 @@ export class UsersService {
       };
     }
 
-    // If user doesn't have an active subscription, create a temporary one
-    if (!userSubscription) {
+    // If customer doesn't have an active subscription, create a temporary one
+    if (!customerSubscription) {
       // Find the first available club (or create a default one)
       let defaultClub = await this.prisma.club.findFirst({
         where: { isActive: true },
@@ -99,7 +113,9 @@ export class UsersService {
         defaultClub = await this.prisma.club.create({
           data: {
             name: 'Default Club',
-            description: 'Default club for user QR codes',
+            description: 'Default club for customer QR codes',
+            subdomain: 'default',
+            contactEmail: 'admin@default.com',
           },
         });
       }
@@ -109,23 +125,25 @@ export class UsersService {
       const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
       // Generate QR code data
-      const qrCodeData = `USER-${userId}-SUB-${new Date().getTime()}`; // Use timestamp as placeholder
+      const qrCodeData = `CUSTOMER-${customer.id}-SUB-${new Date().getTime()}`; // Use timestamp as placeholder
 
       // Create subscription and QR code in a single transaction
-      userSubscription = await this.prisma.subscription.create({
+      customerSubscription = await this.prisma.subscription.create({
         data: {
-          name: 'User QR Code Access',
+          name: 'Customer QR Code Access',
           type: 'MONTHLY',
-          price: 0, // Free temporary subscription
+          originalPrice: 0, // Free temporary subscription
+          finalPrice: 0,
           duration: 30,
           startDate,
           endDate,
-          userId,
+          customerId: customer.id,
           clubId: defaultClub.id,
           qrCodes: {
             create: {
               code: qrCodeData,
-              userId,
+              customerId: customer.id,
+              clubId: defaultClub.id,
               expiresAt: endDate,
             }
           },
@@ -137,7 +155,7 @@ export class UsersService {
     }
 
     // Get the QR code created with the subscription
-    const qrCode = userSubscription.qrCodes[0];
+    const qrCode = customerSubscription.qrCodes[0];
 
     return {
       id: qrCode.id,

@@ -49,16 +49,28 @@ export default function Navigation() {
                   Home
                 </Link>
                 {isAuthenticated && (
-                  <Link
-                    href="/packages"
-                    className={`${
-                      router.pathname === '/packages'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    } px-3 py-2 rounded-md text-sm font-medium`}
-                  >
-                    Packages
-                  </Link>
+                  <>
+                    <Link
+                      href="/packages"
+                      className={`${
+                        router.pathname === '/packages'
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      } px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                      Packages
+                    </Link>
+                    <Link
+                      href="/subscriptions"
+                      className={`${
+                        router.pathname === '/subscriptions'
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      } px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                      My Subscriptions
+                    </Link>
+                  </>
                 )}
                 {isStaff && (
                   <Link
@@ -192,17 +204,30 @@ export default function Navigation() {
               Home
             </Link>
             {isAuthenticated && (
-              <Link
-                href="/packages"
-                className={`${
-                  router.pathname === '/packages'
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                } block px-3 py-2 rounded-md text-base font-medium`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Packages
-              </Link>
+              <>
+                <Link
+                  href="/packages"
+                  className={`${
+                    router.pathname === '/packages'
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  } block px-3 py-2 rounded-md text-base font-medium`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Packages
+                </Link>
+                <Link
+                  href="/subscriptions"
+                  className={`${
+                    router.pathname === '/subscriptions'
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  } block px-3 py-2 rounded-md text-base font-medium`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Subscriptions
+                </Link>
+              </>
             )}
             {isStaff && (
               <Link

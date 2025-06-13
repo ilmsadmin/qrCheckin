@@ -1,23 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CheckinLogMapper } from '../common/mappers/checkin-log.mapper';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class CheckinService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private checkinLogMapper: CheckinLogMapper
+  ) {}
 
   async checkin(qrCodeId: string, eventId: string) {
     // Try to find QR code by ID first, then by code field
     let qrCode = await this.prisma.qRCode.findUnique({
       where: { id: qrCodeId },
-      include: { user: true, subscription: true }
+      include: { customer: true, subscription: true, club: true }
     });
 
     // If not found by ID, try to find by code field
     if (!qrCode) {
       qrCode = await this.prisma.qRCode.findUnique({
         where: { code: qrCodeId },
-        include: { user: true, subscription: true }
+        include: { customer: true, subscription: true, club: true }
       });
     }
 
@@ -25,34 +29,37 @@ export class CheckinService {
       throw new Error('Invalid QR Code');
     }
 
-    return this.prisma.checkinLog.create({
+    const prismaCheckinLog = await this.prisma.checkinLog.create({
       data: {
         type: 'CHECKIN',
-        userId: qrCode.userId,
+        customerId: qrCode.customerId,
+        clubId: qrCode.clubId,
         eventId,
         subscriptionId: qrCode.subscriptionId,
         qrCodeId: qrCode.id,
         timestamp: new Date(),
       },
       include: {
-        user: true,
+        customer: true,
         event: true,
       }
     });
+
+    return this.checkinLogMapper.mapPrismaCheckinLogToDto(prismaCheckinLog);
   }
 
   async checkout(qrCodeId: string, eventId: string) {
     // Try to find QR code by ID first, then by code field
     let qrCode = await this.prisma.qRCode.findUnique({
       where: { id: qrCodeId },
-      include: { user: true, subscription: true }
+      include: { customer: true, subscription: true, club: true }
     });
 
     // If not found by ID, try to find by code field
     if (!qrCode) {
       qrCode = await this.prisma.qRCode.findUnique({
         where: { code: qrCodeId },
-        include: { user: true, subscription: true }
+        include: { customer: true, subscription: true, club: true }
       });
     }
 
@@ -60,30 +67,34 @@ export class CheckinService {
       throw new Error('Invalid QR Code');
     }
 
-    return this.prisma.checkinLog.create({
+    const prismaCheckinLog = await this.prisma.checkinLog.create({
       data: {
         type: 'CHECKOUT',
-        userId: qrCode.userId,
+        customerId: qrCode.customerId,
+        clubId: qrCode.clubId,
         eventId,
         subscriptionId: qrCode.subscriptionId,
         qrCodeId: qrCode.id,
         timestamp: new Date(),
       },
       include: {
-        user: true,
+        customer: true,
         event: true,
       }
     });
+
+    return this.checkinLogMapper.mapPrismaCheckinLogToDto(prismaCheckinLog);
   }
 
-  async getCheckinLogs(userId?: string, eventId?: string, limit?: number, offset?: number) {
-    return this.prisma.checkinLog.findMany({
+  async getCheckinLogs(customerId?: string, eventId?: string, clubId?: string, limit?: number, offset?: number) {
+    const prismaCheckinLogs = await this.prisma.checkinLog.findMany({
       where: {
-        ...(userId && { userId }),
+        ...(customerId && { customerId }),
         ...(eventId && { eventId }),
+        ...(clubId && { clubId }),
       },
       include: {
-        user: {
+        customer: {
           select: {
             id: true,
             firstName: true,
@@ -99,5 +110,7 @@ export class CheckinService {
       ...(limit && { take: limit }),
       ...(offset && { skip: offset }),
     });
+
+    return prismaCheckinLogs.map(log => this.checkinLogMapper.mapPrismaCheckinLogToDto(log));
   }
 }

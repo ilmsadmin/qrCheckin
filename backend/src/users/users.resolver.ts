@@ -21,7 +21,7 @@ export class UsersResolver {
 
   @Query(() => [User])
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.STAFF)
+  @Roles(Role.CLUB_ADMIN, Role.CLUB_STAFF)
   async users(): Promise<User[]> {
     return this.usersService.findAll();
   }
@@ -32,7 +32,7 @@ export class UsersResolver {
     @CurrentUser() currentUser: User,
   ): Promise<User> {
     // Users can only access their own profile unless they are admin/staff
-    if (currentUser.role === Role.USER && currentUser.id !== id) {
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== id) {
       throw new Error('Unauthorized to access this user profile');
     }
     return this.usersService.findOne(id);
@@ -45,7 +45,7 @@ export class UsersResolver {
 
   @Mutation(() => QRCode)
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.STAFF)
+  @Roles(Role.CLUB_ADMIN, Role.CLUB_STAFF)
   async generateUserQRCode(
     @Args('userId', { type: () => ID }) userId: string,
   ): Promise<QRCode> {
@@ -54,12 +54,12 @@ export class UsersResolver {
 
   @Query(() => [CheckinLog])
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.STAFF)
+  @Roles(Role.CLUB_ADMIN, Role.CLUB_STAFF)
   async userCheckinLogs(
     @Args('userId', { type: () => ID, nullable: true }) userId?: string,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
   ): Promise<CheckinLog[]> {
-    return this.checkinService.getCheckinLogs(userId, undefined, limit, offset);
+    return this.checkinService.getCheckinLogs(userId, undefined, undefined, limit, offset);
   }
 }

@@ -40,17 +40,31 @@ export class SubscriptionService {
       };
     }
 
+    // Ensure startDate and endDate are properly set
+    const now = new Date();
+    const startDate = subscriptionData.startDate || now;
+    const duration = subscriptionData.duration || 30; // Default 30 days if not specified
+    const endDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+
+    // Create final subscription data with required fields
+    const finalSubscriptionData = {
+      ...subscriptionData,
+      startDate,
+      endDate,
+      isActive: true,
+    };
+
     const subscription = await this.prisma.subscription.create({
-      data: subscriptionData,
+      data: finalSubscriptionData,
       include: {
-        user: true,
+        customer: true,
         club: true,
         package: true,
       }
     });
 
     // Generate QR Code for subscription
-    const qrCode = await this.generateQRCode(subscription.id, subscription.userId);
+    const qrCode = await this.generateQRCode(subscription.id, subscription.customerId, subscription.clubId);
     
     const result = this.subscriptionMapper.mapPrismaSubscriptionToDto(subscription);
     return {
@@ -59,10 +73,10 @@ export class SubscriptionService {
     };
   }
 
-  async generateQRCode(subscriptionId: string, userId: string) {
+  async generateQRCode(subscriptionId: string, customerId: string, clubId: string) {
     const qrCodeData = {
       subscriptionId,
-      userId,
+      customerId,
       timestamp: Date.now(),
     };
 
@@ -72,8 +86,9 @@ export class SubscriptionService {
     const qrCode = await this.prisma.qRCode.create({
       data: {
         code: qrCodeString,
-        userId,
+        customerId,
         subscriptionId,
+        clubId,
         expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
       }
     });
@@ -84,14 +99,14 @@ export class SubscriptionService {
     };
   }
 
-  async getUserSubscriptions(userId: string) {
+  async getCustomerSubscriptions(customerId: string) {
     const subscriptions = await this.prisma.subscription.findMany({
-      where: { userId },
+      where: { customerId },
       include: {
         club: true,
         package: true,
         qrCodes: true,
-        user: true,
+        customer: true,
         _count: {
           select: { checkinLogs: true }
         }
@@ -105,7 +120,7 @@ export class SubscriptionService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
       include: {
-        user: true,
+        customer: true,
         club: true,
         package: true,
         qrCodes: true,
@@ -118,5 +133,114 @@ export class SubscriptionService {
     });
     
     return this.subscriptionMapper.mapPrismaSubscriptionToDto(subscription);
+  }
+
+  async cancelSubscription(id: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        club: true,
+        package: true,
+      }
+    });
+
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
+    // If subscription is already cancelled, just return it (no error)
+    if (!subscription.isActive) {
+      const result = await this.prisma.subscription.findUnique({
+        where: { id },
+        include: {
+          customer: true,
+          club: true,
+          package: true,
+          qrCodes: true,
+        }
+      });
+      return this.subscriptionMapper.mapPrismaSubscriptionToDto(result);
+    }
+
+    // Cancel the subscription
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id },
+      data: { isActive: false },
+      include: {
+        customer: true,
+        club: true,
+        package: true,
+        qrCodes: true,
+      }
+    });
+
+    return this.subscriptionMapper.mapPrismaSubscriptionToDto(updatedSubscription);
+  }
+
+  async reactivateSubscription(id: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        club: true,
+        package: true,
+      }
+    });
+
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
+    // Check if subscription has expired
+    const now = new Date();
+    if (subscription.endDate < now) {
+      throw new Error('Cannot reactivate expired subscription');
+    }
+
+    // If subscription is already active, just return it (no error)
+    if (subscription.isActive) {
+      const result = await this.prisma.subscription.findUnique({
+        where: { id },
+        include: {
+          customer: true,
+          club: true,
+          package: true,
+          qrCodes: true,
+        }
+      });
+      return this.subscriptionMapper.mapPrismaSubscriptionToDto(result);
+    }
+
+    // Reactivate the subscription
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id },
+      data: { isActive: true },
+      include: {
+        customer: true,
+        club: true,
+        package: true,
+        qrCodes: true,
+      }
+    });
+
+    return this.subscriptionMapper.mapPrismaSubscriptionToDto(updatedSubscription);
+  }
+
+  // Helper method to get subscription with customer relation for authorization
+  async getSubscriptionForAuth(id: string) {
+    return await this.prisma.subscription.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        customerId: true,
+        clubId: true,
+        customer: {
+          select: {
+            id: true,
+          }
+        }
+      }
+    });
   }
 }

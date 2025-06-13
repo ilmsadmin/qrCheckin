@@ -1,86 +1,175 @@
-# QR Check-in System
+# QR Check-in Platform - B2B SaaS Solution
 
-A comprehensive QR code-based check-in system for clubs and events, built with modern web technologies.
+A comprehensive multi-tenant B2B SaaS platform that provides QR code-based check-in/check-out services to clubs and organizations. Built with modern technologies and designed for scalability, security, and ease of use.
+
+## 🏢 Business Model
+
+### Service Provider (Our Company)
+- **System Admins**: Manage the entire platform, create and manage club accounts
+- **Technical Support**: Handle technical issues and system maintenance
+
+### Club Clients (Our Customers)  
+- **Club Admins**: Full club management rights, create subscription packages, manage staff
+- **Club Staff**: QR scanning for customer check-in/check-out, view logs and reports
+
+### End Customers
+- **Club Members**: Purchase subscription packages and use QR codes for facility access
 
 ## 🚀 Project Overview
 
-This system provides a complete solution for managing club members and event check-ins using QR code technology. It consists of a backend API, web frontend, mobile applications, and comprehensive documentation.
+This B2B SaaS platform enables clubs and organizations to offer QR code-based check-in services to their customers. Each club operates in an isolated multi-tenant environment with complete control over their customer base, subscription packages, and pricing.
+
+## 📱 Platform Components
+
+### Backend (NestJS + TypeScript)
+- **Status**: ✅ Production Ready
+- **API**: GraphQL with REST endpoints
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT with role-based access control
+- **Multi-tenancy**: Club-based data isolation
+
+### Frontend Web Apps (Next.js + TypeScript)
+- **Status**: 🔄 In Development
+- **System Admin Portal**: Platform management
+- **Club Admin Dashboard**: Club operations management
+- **Club Staff App**: Check-in operations interface
+- **Customer Portal**: Package purchase and QR access
+
+### iOS Mobile App (Swift + SwiftUI)
+- **Status**: 🔄 In Development  
+- **Target**: Club staff for QR code scanning
+- **Features**: Real-time scanning, offline support, analytics
+
+### Android Mobile App (Kotlin + Compose)
+- **Status**: 🔄 In Development
+- **Target**: Club staff for QR code scanning  
+- **Features**: Real-time scanning, offline support, analytics
 
 ## 📁 Project Structure
 
 ```
 qrCheckin/
-├── backend/          # NestJS API with GraphQL, Prisma, PostgreSQL, Redis
-├── frontend/         # Next.js web application with Tailwind CSS
-├── ios-app/          # iOS mobile application (Swift/SwiftUI)
-├── android-app/      # Android mobile application (Kotlin/Compose)
-├── docs/             # Comprehensive project documentation
-├── mock/             # Mock data and HTML design templates
-├── docker-compose.yml # Docker containerization setup
-└── README.md         # This file
-```
+├── backend/                 # ✅ NestJS backend (PRODUCTION READY)
+│   ├── src/
+│   │   ├── auth/           # Authentication and authorization
+│   │   ├── clubs/          # Club management (tenants)
+│   │   ├── users/          # User management (system, club admin, staff)
+│   │   ├── subscription/   # Subscription and package management
+│   │   ├── checkin/        # Check-in/check-out logic
+│   │   ├── events/         # Event management
+│   │   └── common/         # Shared utilities and DTOs
+│   ├── prisma/             # Database schema and migrations
+│   └── test/               # Unit and integration tests
+├── frontend/               # 🔄 Next.js web applications (IN DEVELOPMENT)
+│   ├── src/
+│   │   ├── pages/          # Next.js pages
+│   │   ├── components/     # Reusable UI components
+│   │   ├── contexts/       # React contexts
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── lib/            # Utilities and configurations
+├── ios-app/                # 🔄 iOS Swift app (IN DEVELOPMENT)
+│   └── qrCheckin/         
+│       ├── Models/         # Data models
+│       ├── Views/          # SwiftUI views
+│       ├── ViewModels/     # View models
+│       ├── Services/       # API and business logic
+│       └── Utils/          # Utilities
+├── android-app/            # 🔄 Android Kotlin app (IN DEVELOPMENT)
+│   └── app/src/main/
+│       ├── java/           # Kotlin source code
+│       ├── res/            # Resources
+│       └── AndroidManifest.xml
+├── ```
 
 ## 🛠 Technology Stack
 
-### Backend
+### Backend (✅ Production Ready)
 - **Framework**: NestJS (Node.js + TypeScript)
 - **Database**: PostgreSQL with Prisma ORM
-- **Cache**: Redis
-- **API**: GraphQL with Apollo Server
-- **Authentication**: JWT
-- **Container**: Docker
+- **Cache**: Redis for sessions and performance
+- **API**: GraphQL with REST endpoints
+- **Authentication**: JWT with role-based access control
+- **Multi-tenancy**: Club-based data isolation
+- **Container**: Docker with production setup
 
-### Frontend
+### Frontend (🔄 In Development)
 - **Framework**: Next.js (React + TypeScript)
-- **Styling**: Tailwind CSS
-- **State Management**: Apollo Client
-- **API**: GraphQL
+- **Styling**: Tailwind CSS with custom design system
+- **State Management**: Apollo Client for GraphQL
+- **UI Components**: Custom component library
+- **Features**: Admin dashboards, customer portals
 
-### Mobile Apps
-- **iOS**: Swift/SwiftUI
-- **Android**: Kotlin/Jetpack Compose
+### iOS App (🔄 In Development)
+- **Language**: Swift + SwiftUI
+- **Architecture**: MVVM with Combine
+- **API Integration**: GraphQL with Apollo iOS
+- **Features**: QR scanning, offline support, real-time updates
+- **Target**: iOS 14+
 
-## ✨ Key Features
+### Android App (🔄 In Development)
+- **Language**: Kotlin + Jetpack Compose
+- **Architecture**: MVVM with Hilt DI
+- **API Integration**: GraphQL with Apollo Android
+- **Features**: QR scanning, offline support, material design
+- **Target**: Android 7.0+ (API 24)
 
-### 👥 User Management
-- Multi-role system (Admin, Staff, User)
-- User registration and authentication
-- Profile management
-- Role-based access control
+## 🎯 Key Features
 
-### 📦 Subscription Package System
-- Admin package creation and management
-- Flexible pricing with discount options
-- Feature-based package differentiation
-- Member package browsing and selection
-- Popular package highlighting
-- Multiple subscription types (Daily, Weekly, Monthly, Yearly, Event-specific)
+### Multi-Tenant B2B SaaS Architecture
+- **Club Isolation**: Each club operates independently with isolated data
+- **Role Hierarchy**: System Admin → Club Admin → Club Staff → Customers
+- **Scalable Infrastructure**: Supports unlimited clubs on shared infrastructure
+- **Custom Branding**: Club-specific configurations and branding
 
-### 🏢 Club & Event Management
-- Create and manage clubs
-- Event scheduling and capacity management
-- Real-time attendance tracking
-- Event analytics
+### Customer & Subscription Management
+- **B2B Model**: Clubs are paying clients, customers are end users
+- **Package-Based Subscriptions**: Flexible subscription packages with pricing tiers
+- **Financial Tracking**: Revenue analytics, commission management, automated billing
+- **Payment Integration**: Stripe integration with webhook support
 
-### 📱 QR Code System
-- Auto-generated QR codes for members
-- QR code scanning for check-ins/check-outs
-- Real-time attendance logging
-- Shareable QR codes via messages/links
+### QR Code Check-in System
+- **Secure QR Codes**: Encrypted codes with expiration and usage limits
+- **Real-Time Validation**: Instant check-in/check-out processing
+- **Offline Support**: Mobile apps work offline with sync capability
+- **Complete Audit Trail**: All check-in activities logged and tracked
 
-### 📊 Admin Dashboard
-- Comprehensive system overview
-- User and club management
-- Event monitoring
-- Analytics and reporting
+### Cross-Platform Mobile Apps
+- **Staff Mobile Apps**: QR scanning, customer management, analytics
+- **Real-time Sync**: Instant data synchronization across all platforms
+- **Offline Capability**: Continue operations without internet connectivity
+- **Push Notifications**: Real-time alerts and updates
 
-### 📱 Mobile Applications
-- Staff apps for QR scanning
-- Real-time sync with backend
-- Offline support
-- Attendance monitoring
+## 🚀 Development Status & Roadmap
 
-## 🚀 Quick Start
+### ✅ Completed (Backend)
+- Multi-tenant database schema with full B2B SaaS structure
+- Authentication system with role-based access control
+- GraphQL API with comprehensive queries and mutations
+- Customer and subscription management
+- QR code generation and validation
+- Check-in/check-out processing
+- Event management system
+- Unit tests with 100% coverage
+
+### 🔄 In Development
+
+#### Frontend Web Applications
+- **Admin Dashboard**: System admin portal for platform management
+- **Club Dashboard**: Club admin interface for business management
+- **Staff Interface**: Operational interface for club staff
+- **Customer Portal**: Self-service portal for customers
+
+#### iOS Mobile App
+- **QR Scanner**: Camera-based QR code scanning
+- **Dashboard**: Real-time analytics and recent activity
+- **Event Management**: Select and manage events for check-ins
+- **Offline Support**: Queue operations when offline
+
+#### Android Mobile App
+- **QR Scanner**: Material Design scanning interface
+- **Analytics**: Charts and statistics for club operations
+- **Event Selection**: Event management for staff operations
+- **Offline Sync**: Background synchronization
 
 ### Prerequisites
 - Node.js 18+
@@ -98,7 +187,10 @@ cd qrCheckin
 docker-compose up -d
 
 # Access the applications
-# Frontend: http://localhost:3000
+# System Admin: http://localhost:3000
+# Club Admin: http://localhost:3001  
+# Club Staff: http://localhost:3002
+# Customer Portal: http://localhost:3003
 # Backend API: http://localhost:4000
 # GraphQL Playground: http://localhost:4000/graphql
 ```
@@ -106,82 +198,228 @@ docker-compose up -d
 ### Manual Setup
 
 #### Backend Setup
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Node.js 18+ and npm
+- PostgreSQL 14+
+- Redis 6+
+- Docker (optional)
+
+### Backend Setup (Required First)
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Configure your database and environment variables
-npm run prisma:migrate
-npm run start:dev
+# Configure your database and Redis URLs in .env
+npx prisma migrate deploy
+npx prisma db seed
+npm run start:dev  # Runs on port 4000
 ```
 
-#### Frontend Setup
+### Frontend Setup (In Development)
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev  # Runs on port 3000
 ```
 
-## 📱 Applications
+### iOS App Setup (In Development)
+```bash
+cd ios-app/qrCheckin
+# Open qrCheckin.xcodeproj in Xcode
+# Configure API endpoints in Config.swift
+# Build and run on iOS Simulator or device
+```
 
-### Web Frontend (Next.js)
-- **URL**: http://localhost:3000
-- **Purpose**: Main website and user interface
-- **Features**: Landing page, user dashboard, admin panel
+### Android App Setup (In Development)
+```bash
+cd android-app
+# Open in Android Studio
+# Configure API endpoints in gradle.properties
+# Build and run on Android emulator or device
+```
+
+### Docker Development Environment
+```bash
+# Start all services
+docker-compose up -d
+
+# Backend will be available on http://localhost:4000
+# Frontend will be available on http://localhost:3000
+# Database on localhost:5432
+# Redis on localhost:6379
+```
+
+## 📱 Application Architecture
+
+### Backend API (Production Ready)
+- **GraphQL Endpoint**: `http://localhost:4000/graphql`
+- **Health Check**: `http://localhost:4000/health`
+- **Documentation**: GraphQL Playground available in development
+- **Authentication**: JWT tokens with role-based permissions
+
+### Frontend Web Apps (In Development)
+- **Main Portal**: `http://localhost:3000`
+- **Features**: Multi-role dashboards, real-time updates, responsive design
+- **Technology**: Next.js, TypeScript, Tailwind CSS, Apollo Client
+
+### iOS Mobile App (In Development)
+- **Target**: iOS 14.0+
+- **Architecture**: SwiftUI + MVVM + Combine
+- **Features**: 
+  - QR code scanning with AVFoundation
+  - Offline support with Core Data
+  - Real-time updates with GraphQL subscriptions
+  - Push notifications
+
+### Android Mobile App (In Development)  
+- **Target**: Android 7.0+ (API 24)
+- **Architecture**: Jetpack Compose + MVVM + Hilt
+- **Features**:
+  - QR code scanning with CameraX
+  - Offline support with Room database
+  - Real-time updates with GraphQL subscriptions
+  - Material Design 3
+
+## 🔗 API Integration
+
+### GraphQL Schema
+```graphql
+type Query {
+  # Authentication
+  me: User
+  
+  # Clubs (Multi-tenant)
+  clubs: [Club!]!
+  club(id: ID!): Club
+  
+  # Customers
+  customers(clubId: ID!): [Customer!]!
+  customer(id: ID!): Customer
+  
+  # Subscriptions
+  subscriptions(customerId: ID): [Subscription!]!
+  subscriptionPackages(clubId: ID!): [SubscriptionPackage!]!
+  
+  # Check-ins
+  checkinLogs(limit: Int, offset: Int): [CheckinLog!]!
+  
+  # Events
+  events(clubId: ID!): [Event!]!
+}
+
+type Mutation {
+  # Authentication
+  login(email: String!, password: String!): AuthResponse!
+  logout: Boolean!
+  
+  # QR Operations
+  checkin(qrCodeId: String!, eventId: String!): CheckinLog!
+  checkout(qrCodeId: String!, eventId: String!): CheckinLog!
+  
+  # Customer Management
+  createCustomer(input: CreateCustomerInput!): Customer!
+  updateCustomer(id: ID!, input: UpdateCustomerInput!): Customer!
+}
+```
+
+### Mobile App Integration Points
+```typescript
+// iOS Swift Integration
+class GraphQLService {
+    func performCheckin(qrCodeId: String, eventId: String) -> AnyPublisher<CheckinLog, Error>
+    func fetchEvents() -> AnyPublisher<[Event], Error>
+    func fetchRecentCheckins() -> AnyPublisher<[CheckinLog], Error>
+}
+
+// Android Kotlin Integration  
+class QRCheckinRepository {
+    suspend fun checkin(qrCodeId: String, eventId: String): Result<CheckinLog>
+    suspend fun getEvents(): Flow<List<Event>>
+    suspend fun getCheckinLogs(): Flow<List<CheckinLog>>
+}
+```
+- **URL**: http://localhost:3003
+- **Purpose**: Self-service subscription management
+- **Features**: Package browsing, subscription management, QR code access, usage history
 
 ### Backend API (NestJS)
 - **URL**: http://localhost:4000
 - **GraphQL**: http://localhost:4000/graphql
-- **Purpose**: Core API and business logic
-- **Features**: User auth, data management, QR code generation
+- **Purpose**: Multi-tenant API with role-based access
+- **Features**: Authentication, data management, QR generation, payment processing
 
 ### Mobile Apps
-- **iOS App**: Staff QR scanning application
-- **Android App**: Staff QR scanning application
-- **Purpose**: QR code scanning for check-ins/check-outs
+- **Staff App**: QR scanning and customer management
+- **Customer App**: QR code display and subscription tracking
+- **Purpose**: Mobile-optimized access for on-the-go usage
 
 ## 🏗 System Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Mobile Apps   │    │   Admin Panel   │
-│   (Next.js)     │    │   (iOS/Android) │    │   (Next.js)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   GraphQL API   │
-                    │   (NestJS)      │
-                    └─────────────────┘
-                             │
-            ┌────────────────┼────────────────┐
-            │                │                │
-   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-   │ PostgreSQL  │  │    Redis    │  │    Files    │
-   │ Database    │  │    Cache    │  │   Storage   │
-   └─────────────┘  └─────────────┘  └─────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  System Admin   │    │  Club Admin     │    │  Club Staff     │    │   Customers     │
+│    Portal       │    │   Dashboard     │    │     App         │    │    Portal       │
+│   (Next.js)     │    │   (Next.js)     │    │   (Next.js)     │    │   (Next.js)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │                       │
+         └───────────────────────┼───────────────────────┼───────────────────────┘
+                                 │                       │
+                        ┌─────────────────┐             │
+                        │   GraphQL API   │             │
+                        │   (NestJS)      │             │
+                        │  Multi-Tenant   │             │
+                        └─────────────────┘             │
+                                 │                       │
+                        ┌─────────────────┐             │
+                        │   Services      │             │
+                        │     Layer       │             │
+                        │  (Tenant-Aware) │             │
+                        └─────────────────┘             │
+                                 │                       │
+                ┌────────────────┼────────────────┐     │
+                │                │                │     │
+       ┌─────────────┐  ┌─────────────┐  ┌─────────────┐│
+       │ PostgreSQL  │  │    Redis    │  │   Payment   ││
+       │ Multi-Tenant│  │    Cache    │  │  Processing ││
+       │  Database   │  │  (Sessions) │  │  (Stripe)   ││
+       └─────────────┘  └─────────────┘  └─────────────┘│
+                                                        │
+                        ┌─────────────────┐             │
+                        │  Mobile Apps    │             │
+                        │ (iOS/Android)   │─────────────┘
+                        │   Staff QR      │
+                        │   Scanner       │
+                        └─────────────────┘
 ```
 
-## 👤 User Roles
+## 👤 User Roles & Permissions
 
-### System Administrator
-- Full system access
-- User and club management
-- System configuration
-- Analytics and reporting
+### System Administrator (Our Staff)
+- **Platform Management**: Create and manage club accounts
+- **Technical Operations**: System maintenance and troubleshooting
+- **Financial Oversight**: Platform billing and commission management
+- **Analytics**: Global platform analytics and performance monitoring
 
-### Staff Member
-- QR code scanning
-- Member check-in/check-out
-- Event monitoring
-- Basic reporting
+### Club Administrator (Club Owner/Manager)
+- **Club Management**: Complete control over club settings and branding
+- **Staff Management**: Create and manage club staff accounts
+- **Package Management**: Create and manage subscription packages
+- **Customer Management**: Oversee customer base and provide support
+- **Financial Management**: Club revenue tracking and reporting
 
-### Club Member
-- Profile management
-- QR code access
-- Check-in history
-- Subscription management
+### Club Staff (Club Employees)
+- **QR Operations**: Scan QR codes for customer check-in/check-out
+- **Customer Service**: Assist customers with subscriptions and issues
+- **Reporting**: Generate and view operational reports
+- **Customer Lookup**: Verify customer information and subscription status
+
+### Customers (End Users)
+- **Self-Service**: Browse and purchase subscription packages
+- **Account Management**: Manage personal profile and preferences
+- **QR Access**: Access QR codes for facility check-in/check-out
+- **Usage Tracking**: View usage history and remaining credits/visits
 
 ## 📖 Documentation
 

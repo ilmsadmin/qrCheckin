@@ -1,7 +1,7 @@
 import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
 import { SubscriptionType } from '../enums';
 import { Club } from './club.dto';
-import { User } from './user.dto';
+import { Customer } from './customer.dto';
 
 registerEnumType(SubscriptionType, {
   name: 'SubscriptionType',
@@ -90,8 +90,14 @@ export class Subscription {
   @Field()
   updatedAt: Date;
 
-  @Field(() => User)
-  user: User;
+  @Field(() => ID)
+  clubId: string;
+
+  @Field(() => ID)
+  customerId: string;
+
+  @Field(() => Customer)
+  customer: Customer;
 
   @Field(() => Club)
   club: Club;

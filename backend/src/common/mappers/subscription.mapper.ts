@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Subscription } from '../dto/subscription.dto';
 import { SubscriptionType } from '../enums';
-import { UserMapper } from './user.mapper';
+import { CustomerMapper } from './customer.mapper';
 
 @Injectable()
 export class SubscriptionMapper {
-  constructor(private userMapper: UserMapper) {}
+  constructor(private customerMapper: CustomerMapper) {}
 
   mapPrismaSubscriptionToDto(
     prismaSubscription: any
@@ -22,11 +22,13 @@ export class SubscriptionMapper {
       endDate: prismaSubscription.endDate,
       createdAt: prismaSubscription.createdAt,
       updatedAt: prismaSubscription.updatedAt,
+      clubId: prismaSubscription.clubId,
+      customerId: prismaSubscription.customerId,
     };
 
     // Add relations if they exist
-    if (prismaSubscription.user) {
-      subscription.user = this.userMapper.mapPrismaUserToDto(prismaSubscription.user);
+    if (prismaSubscription.customer) {
+      subscription.customer = this.customerMapper.mapPrismaCustomerToDto(prismaSubscription.customer);
     }
 
     if (prismaSubscription.club) {

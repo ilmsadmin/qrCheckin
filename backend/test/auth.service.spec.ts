@@ -25,11 +25,12 @@ describe('AuthService', () => {
     username: 'testuser',
     firstName: 'Test',
     lastName: 'User',
-    role: Role.USER,
+    role: 'CUSTOMER' as any,
     isActive: true,
     password: 'hashedpassword',
     createdAt: new Date(),
     updatedAt: new Date(),
+    clubId: 'club-1',
   };
 
   beforeEach(async () => {
@@ -116,10 +117,11 @@ describe('AuthService', () => {
         username: 'testuser',
         firstName: 'Test',
         lastName: 'User',
-        role: Role.USER,
+        role: Role.CUSTOMER,
         isActive: true,
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
+        clubId: 'club-1',
       });
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email },

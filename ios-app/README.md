@@ -1,24 +1,59 @@
-# QR Check-in iOS App
+# QR Check-in iOS App - Club Staff Mobile Application
 
-## Overview
-iOS application for QR Check-in system staff to scan QR codes and manage member check-ins.
+Native iOS application for club staff to perform QR code scanning, customer check-in/check-out operations, and manage daily club activities.
 
-## Features
-- **QR Code Scanner**: Real-time camera-based QR code scanning with visual feedback
-- **Member Check-in/Check-out**: Process member check-ins and check-outs for events
-- **Event Management**: Select and manage active events
-- **Attendance Logs**: View recent check-in activity and statistics
-- **Offline Support**: Queue check-ins when offline for later sync
-- **Authentication**: Secure login for staff members
-- **Real-time Sync**: GraphQL-based communication with backend
+## 🎯 Overview
 
-## Tech Stack
-- **Language**: Swift/SwiftUI
-- **Architecture**: MVVM with Combine
-- **Networking**: URLSession + GraphQL
-- **Local Storage**: UserDefaults + Keychain
-- **QR Scanner**: AVFoundation
-- **Dependencies**: None (pure Swift implementation)
+The iOS app is designed specifically for club staff members who need to:
+- Scan customer QR codes for check-in/check-out
+- Manage events and select active events
+- View real-time check-in logs and analytics
+- Handle customer inquiries and support
+- Operate offline when necessary with sync capabilities
+
+## 👥 Target Users
+
+- **Club Staff**: Front desk staff, trainers, and operational personnel
+- **Club Admins**: Management personnel who need operational oversight
+- **User Role**: `CLUB_STAFF` and `CLUB_ADMIN` in the backend system
+
+## 🏗️ Technical Architecture
+
+### Platform & Requirements
+- **Minimum iOS Version**: iOS 14.0+
+- **Deployment Target**: iOS 14.0
+- **Device Support**: iPhone and iPad (Universal app)
+- **Orientation**: Portrait primary, landscape supported
+
+### Architecture Pattern
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **UI Framework**: SwiftUI with UIKit integration where needed
+- **Reactive Programming**: Combine framework for data binding
+- **Dependency Injection**: Manual DI with protocol-based architecture
+
+## 📱 Development Status
+
+### ✅ Completed Features
+- Basic project structure and architecture
+- SwiftUI-based user interface
+- Authentication flow with JWT tokens
+- QR code scanning with AVFoundation
+- Event selection and management
+- Mock data services for development
+- Unit tests for core functionality
+
+### 🔄 In Development
+- Real-time GraphQL API integration
+- Offline support and sync capabilities
+- Enhanced UI/UX design
+- Comprehensive error handling
+- Performance optimizations
+
+### ⏳ Planned Features
+- Push notifications
+- Advanced analytics dashboard
+- iPad-optimized interface
+- Apple Watch companion app
 
 ## Getting Started
 

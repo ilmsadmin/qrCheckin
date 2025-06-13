@@ -1,10 +1,10 @@
 import Head from 'next/head';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import Navigation from '../../components/Navigation';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import { GET_ALL_EVENTS, CREATE_EVENT, UPDATE_EVENT, REMOVE_EVENT } from '../../lib/graphql/events';
+import { GET_ALL_EVENTS, CREATE_EVENT, UPDATE_EVENT, REMOVE_EVENT, REACTIVATE_EVENT } from '../../lib/graphql/events';
 import { GET_CLUBS } from '../../lib/graphql/dashboard';
 
 interface Event {
@@ -18,6 +18,7 @@ interface Event {
   maxCapacity?: number;
   currentAttendees?: number;
   createdAt: string;
+  updatedAt?: string;
   club: {
     id: string;
     name: string;
@@ -31,6 +32,7 @@ interface Club {
 }
 
 export default function EventManagement() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
@@ -48,16 +50,21 @@ export default function EventManagement() {
     clubId: ''
   });
 
-  const { data, loading, error, refetch } = useQuery(GET_ALL_EVENTS);
+  const { data, loading, error, refetch } = useQuery(GET_ALL_EVENTS, {
+    fetchPolicy: 'cache-and-network',  // Always fetch from network, but show cache first
+    notifyOnNetworkStatusChange: true
+  });
   const { data: clubsData } = useQuery(GET_CLUBS);
   const [createEvent, { loading: createLoading }] = useMutation(CREATE_EVENT);
   const [updateEvent, { loading: updateLoading }] = useMutation(UPDATE_EVENT);
   const [removeEvent, { loading: removeLoading }] = useMutation(REMOVE_EVENT);
+  const [reactivateEvent, { loading: reactivateLoading }] = useMutation(REACTIVATE_EVENT);
 
   useEffect(() => {
     if (data?.events) {
       try {
         const parsedEvents = JSON.parse(data.events);
+        console.log('Parsed events from backend:', parsedEvents);
         setEvents(parsedEvents);
       } catch (e) {
         console.error('Error parsing events data:', e);
@@ -120,12 +127,21 @@ export default function EventManagement() {
         clubId: formData.clubId
       };
 
-      await createEvent({ variables: { input } });
-      resetForm();
-      setShowCreateModal(false);
-      refetch();
+      const result = await createEvent({ variables: { input } });
+      
+      if (result.data?.createEvent) {
+        const newEvent = JSON.parse(result.data.createEvent);
+        
+        // Add the new event to the events state
+        setEvents(prevEvents => [...prevEvents, newEvent]);
+        
+        resetForm();
+        setShowCreateModal(false);
+        alert('Event created successfully!');
+      }
     } catch (error) {
       console.error('Error creating event:', error);
+      alert('Failed to create event. Please try again.');
     }
   };
 
@@ -144,12 +160,27 @@ export default function EventManagement() {
         clubId: formData.clubId
       };
 
-      await updateEvent({ variables: { id: editingEvent.id, input } });
-      resetForm();
-      setEditingEvent(null);
-      refetch();
+      const result = await updateEvent({ variables: { id: editingEvent.id, input } });
+      
+      if (result.data?.updateEvent) {
+        const updatedEvent = JSON.parse(result.data.updateEvent);
+        
+        // Update the specific event in the events state
+        setEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === editingEvent.id 
+              ? updatedEvent
+              : event
+          )
+        );
+        
+        resetForm();
+        setEditingEvent(null);
+        alert('Event updated successfully!');
+      }
     } catch (error) {
       console.error('Error updating event:', error);
+      alert('Failed to update event. Please try again.');
     }
   };
 
@@ -157,10 +188,129 @@ export default function EventManagement() {
     if (!confirm('Are you sure you want to deactivate this event?')) return;
 
     try {
-      await removeEvent({ variables: { id: eventId } });
-      refetch();
-    } catch (error) {
+      console.log('Attempting to remove event with ID:', eventId);
+      console.log('RemoveEvent mutation:', REMOVE_EVENT);
+      
+      const result = await removeEvent({ 
+        variables: { id: eventId },
+        errorPolicy: 'all'
+      });
+      
+      console.log('Remove event result:', result);
+      console.log('Remove event data:', result.data);
+      console.log('Remove event errors:', result.errors);
+      
+      if (result.errors && result.errors.length > 0) {
+        console.error('GraphQL errors:', result.errors);
+        alert(`Failed to deactivate event: ${result.errors[0].message}`);
+        return;
+      }
+      
+      if (result.data?.removeEvent) {
+        console.log('Event successfully removed, updating local state...');
+        const updatedEvent = JSON.parse(result.data.removeEvent);
+        
+        // Update the events state with the actual backend response
+        setEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === eventId 
+              ? { ...event, ...updatedEvent }
+              : event
+          )
+        );
+        
+        alert('Event deactivated successfully!');
+      } else {
+        console.error('No data returned from removeEvent mutation');
+        alert('Failed to deactivate event: No data returned');
+      }
+    } catch (error: any) {
       console.error('Error removing event:', error);
+      console.error('Error details:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError,
+        extraInfo: error.extraInfo
+      });
+      
+      // Show user-friendly error message
+      let errorMessage = 'Unknown error';
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = error.graphQLErrors[0].message;
+      } else if (error.networkError) {
+        errorMessage = `Network error: ${error.networkError.message}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Failed to deactivate event: ${errorMessage}`);
+    }
+  };
+
+  const handleReactivateEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to reactivate this event?')) return;
+
+    try {
+      console.log('Attempting to reactivate event with ID:', eventId);
+      
+      // Find the current event to check its status
+      const currentEvent = events.find(e => e.id === eventId);
+      console.log('Current event status before reactivation:', currentEvent);
+      
+      const result = await reactivateEvent({ 
+        variables: { id: eventId },
+        errorPolicy: 'all'
+      });
+      
+      console.log('Reactivate event result:', result);
+      console.log('Reactivate event data:', result.data);
+      console.log('Reactivate event errors:', result.errors);
+      
+      if (result.errors && result.errors.length > 0) {
+        console.error('GraphQL errors:', result.errors);
+        alert(`Failed to reactivate event: ${result.errors[0].message}`);
+        return;
+      }
+      
+      if (result.data?.reactivateEvent) {
+        console.log('Event successfully reactivated, updating local state...');
+        const updatedEvent = JSON.parse(result.data.reactivateEvent);
+        console.log('Updated event from backend:', updatedEvent);
+        
+        // Update the events state with the actual backend response
+        setEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === eventId 
+              ? { ...event, ...updatedEvent }
+              : event
+          )
+        );
+        
+        alert('Event reactivated successfully!');
+      } else {
+        console.error('No data returned from reactivateEvent mutation');
+        alert('Failed to reactivate event: No data returned');
+      }
+    } catch (error: any) {
+      console.error('Error reactivating event:', error);
+      console.error('Error details:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError,
+        extraInfo: error.extraInfo
+      });
+      
+      // Show user-friendly error message
+      let errorMessage = 'Unknown error';
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = error.graphQLErrors[0].message;
+      } else if (error.networkError) {
+        errorMessage = `Network error: ${error.networkError.message}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Failed to reactivate event: ${errorMessage}`);
     }
   };
 
@@ -265,6 +415,18 @@ export default function EventManagement() {
                     className="bg-white px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     <i className="fas fa-refresh mr-2"></i>Refresh
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Force refresh from server, ignore cache completely
+                      refetch({
+                        timestamp: Date.now() // Force cache bust
+                      });
+                    }}
+                    className="bg-yellow-600 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-yellow-700"
+                    title="Force refresh from server"
+                  >
+                    <i className="fas fa-sync-alt mr-2"></i>Force Refresh
                   </button>
                   <button 
                     onClick={() => openCreateModal()}
@@ -411,16 +573,32 @@ export default function EventManagement() {
                                 >
                                   <i className="fas fa-edit"></i>
                                 </button>
-                                <button className="text-green-600 hover:text-green-900" title="View details">
+                                <button 
+                                  onClick={() => router.push(`/admin/events/${event.id}`)}
+                                  className="text-green-600 hover:text-green-900" 
+                                  title="View details"
+                                >
                                   <i className="fas fa-eye"></i>
                                 </button>
-                                <button 
-                                  onClick={() => handleRemoveEvent(event.id)}
-                                  className="text-red-600 hover:text-red-900"
-                                  title="Deactivate event"
-                                >
-                                  <i className="fas fa-trash"></i>
-                                </button>
+                                {event.isActive ? (
+                                  <button 
+                                    onClick={() => handleRemoveEvent(event.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                    title="Deactivate event"
+                                    disabled={removeLoading}
+                                  >
+                                    <i className="fas fa-ban"></i>
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleReactivateEvent(event.id)}
+                                    className="text-green-600 hover:text-green-900"
+                                    title="Reactivate event"
+                                    disabled={reactivateLoading}
+                                  >
+                                    <i className="fas fa-check-circle"></i>
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>

@@ -26,9 +26,10 @@ export class CheckinResolver {
   async checkinLogs(
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
-    @Args('userId', { nullable: true }) userId?: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
     @Args('eventId', { nullable: true }) eventId?: string,
+    @Args('clubId', { nullable: true }) clubId?: string,
   ): Promise<CheckinLog[]> {
-    return this.checkinService.getCheckinLogs(userId, eventId, limit, offset);
+    return this.checkinService.getCheckinLogs(customerId, eventId, clubId, limit, offset);
   }
 }

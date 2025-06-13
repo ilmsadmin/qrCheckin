@@ -23,16 +23,18 @@ export class ClubsResolver {
   }
 
   @Mutation(() => Club)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSTEM_ADMIN)
   async createClub(
     @Args('name') name: string,
+    @Args('subdomain') subdomain: string,
+    @Args('contactEmail') contactEmail: string,
     @Args('description', { nullable: true }) description?: string,
   ): Promise<Club> {
-    return this.clubsService.create({ name, description });
+    return this.clubsService.create({ name, description, subdomain, contactEmail });
   }
 
   @Mutation(() => Club)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSTEM_ADMIN)
   async updateClub(
     @Args('id', { type: () => ID }) id: string,
     @Args('name', { nullable: true }) name?: string,
@@ -43,7 +45,7 @@ export class ClubsResolver {
   }
 
   @Mutation(() => Club)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SYSTEM_ADMIN)
   async removeClub(@Args('id', { type: () => ID }) id: string): Promise<Club> {
     return this.clubsService.remove(id);
   }

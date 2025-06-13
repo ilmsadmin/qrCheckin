@@ -4,18 +4,16 @@ import { SubscriptionResolver } from './subscription.resolver';
 import { SubscriptionPackageService } from './subscription-package.service';
 import { SubscriptionPackageResolver } from './subscription-package.resolver';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserMapper } from '../common/mappers/user.mapper';
-import { SubscriptionMapper } from '../common/mappers/subscription.mapper';
+import { MappersModule } from '../common/mappers/mappers.module';
 
 @Module({
+  imports: [MappersModule],
   providers: [
     SubscriptionService, 
     SubscriptionResolver, 
     SubscriptionPackageService,
     SubscriptionPackageResolver,
     PrismaService,
-    UserMapper,
-    SubscriptionMapper
   ],
 })
 export class SubscriptionModule {}

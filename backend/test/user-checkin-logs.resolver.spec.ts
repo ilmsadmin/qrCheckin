@@ -63,7 +63,7 @@ describe('UsersResolver - userCheckinLogs', () => {
             firstName: 'John',
             lastName: 'Doe',
             email: 'john@example.com',
-            role: Role.USER,
+            role: Role.CUSTOMER,
             isActive: true,
             createdAt: new Date('2024-01-01T00:00:00Z'),
             updatedAt: new Date('2024-01-01T00:00:00Z'),
@@ -89,6 +89,7 @@ describe('UsersResolver - userCheckinLogs', () => {
       expect(checkinService.getCheckinLogs).toHaveBeenCalledWith(
         userId,
         undefined, // eventId should be undefined
+        undefined, // clubId should be undefined
         limit,
         offset,
       );
@@ -107,6 +108,7 @@ describe('UsersResolver - userCheckinLogs', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
     });
 
@@ -121,6 +123,7 @@ describe('UsersResolver - userCheckinLogs', () => {
       expect(checkinService.getCheckinLogs).toHaveBeenCalledWith(
         userId,
         undefined,
+        undefined,
         limit,
         offset,
       );
@@ -134,6 +137,7 @@ describe('UsersResolver - userCheckinLogs', () => {
       await resolver.userCheckinLogs(undefined, limit, offset);
 
       expect(checkinService.getCheckinLogs).toHaveBeenCalledWith(
+        undefined,
         undefined,
         undefined,
         limit,

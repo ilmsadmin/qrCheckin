@@ -4,211 +4,349 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean up existing data
+  // Clean up existing data (order matters for foreign keys)
+  await prisma.payment.deleteMany();
+  await prisma.payout.deleteMany();
   await prisma.checkinLog.deleteMany();
   await prisma.qRCode.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.subscriptionPackage.deleteMany();
   await prisma.event.deleteMany();
-  await prisma.club.deleteMany();
+  await prisma.customer.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.club.deleteMany();
 
-  console.log('Seeding database...');
+  console.log('Seeding B2B SaaS database...');
 
-  // Create admin users
-  const adminPasswordHash = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.create({
+  // Create System Admin
+  const systemAdminPasswordHash = await bcrypt.hash('systemadmin123', 10);
+  const systemAdmin = await prisma.user.create({
     data: {
-      email: 'admin@qrcheckin.com',
-      username: 'admin',
-      password: adminPasswordHash,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'ADMIN',
+      email: 'system@qrcheckin.com',
+      username: 'systemadmin',
+      password: systemAdminPasswordHash,
+      firstName: 'System',
+      lastName: 'Administrator',
+      role: 'SYSTEM_ADMIN',
     },
   });
-  console.log(`Created admin user: ${admin.email}`);
-  
-  // Create Toan admin user
-  const toanPasswordHash = await bcrypt.hash('ToanLinh', 10);
-  const toanAdmin = await prisma.user.create({
-    data: {
-      email: 'toan@zplus.vn',
-      username: 'toan',
-      password: toanPasswordHash,
-      firstName: 'Toan',
-      lastName: 'Admin',
-      role: 'ADMIN',
-    },
-  });
-  console.log(`Created admin user: ${toanAdmin.email}`);
+  console.log(`Created system admin: ${systemAdmin.email}`);
 
-  // Create staff user
-  const staffPasswordHash = await bcrypt.hash('staff123', 10);
-  const staff = await prisma.user.create({
-    data: {
-      email: 'staff@qrcheckin.com',
-      username: 'staff',
-      password: staffPasswordHash,
-      firstName: 'Staff',
-      lastName: 'User',
-      role: 'STAFF',
-    },
-  });
-  console.log(`Created staff user: ${staff.email}`);
-
-  // Create normal user
-  const userPasswordHash = await bcrypt.hash('user123', 10);
-  const user = await prisma.user.create({
-    data: {
-      email: 'user@qrcheckin.com',
-      username: 'user',
-      password: userPasswordHash,
-      firstName: 'Regular',
-      lastName: 'User',
-      role: 'USER',
-    },
-  });
-  console.log(`Created regular user: ${user.email}`);
-
-  // Create clubs
+  // Create clubs (our B2B clients)
   const fitnessClub = await prisma.club.create({
     data: {
-      name: 'Fitness Club',
-      description: 'A club for fitness enthusiasts',
+      name: 'Elite Fitness Club',
+      description: 'Premium fitness facility with state-of-the-art equipment',
+      subdomain: 'elite-fitness',
+      contactEmail: 'admin@elitefitness.com',
+      contactPhone: '+1-555-0123',
+      address: '123 Fitness Street',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94102',
+      planType: 'PROFESSIONAL',
+      planPrice: 99.00,
+      subscriptionStatus: 'ACTIVE',
+      trialEndsAt: null,
+      subscriptionEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      maxCustomers: 1000,
+      maxEvents: 50,
+      maxStaff: 10,
+      commissionRate: 0.05,
     },
   });
   console.log(`Created club: ${fitnessClub.name}`);
 
-  const yogaClub = await prisma.club.create({
+  const yogaStudio = await prisma.club.create({
     data: {
-      name: 'Yoga Studio',
-      description: 'A peaceful yoga studio',
+      name: 'Zen Yoga Studio',
+      description: 'Peaceful yoga studio for mind and body wellness',
+      subdomain: 'zen-yoga',
+      contactEmail: 'contact@zenyoga.com',
+      contactPhone: '+1-555-0456',
+      address: '456 Meditation Lane',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '90210',
+      planType: 'STARTER',
+      planPrice: 49.00,
+      subscriptionStatus: 'TRIAL',
+      trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      maxCustomers: 200,
+      maxEvents: 20,
+      maxStaff: 5,
+      commissionRate: 0.03,
     },
   });
-  console.log(`Created club: ${yogaClub.name}`);
+  console.log(`Created club: ${yogaStudio.name}`);
+
+  // Create club admin and staff users
+  const fitnessAdminPasswordHash = await bcrypt.hash('fitadmin123', 10);
+  const fitnessAdmin = await prisma.user.create({
+    data: {
+      email: 'admin@elitefitness.com',
+      username: 'fitadmin',
+      password: fitnessAdminPasswordHash,
+      firstName: 'John',
+      lastName: 'Smith',
+      role: 'CLUB_ADMIN',
+      clubId: fitnessClub.id,
+    },
+  });
+  console.log(`Created club admin: ${fitnessAdmin.email}`);
+
+  const fitnessStaffPasswordHash = await bcrypt.hash('fitstaff123', 10);
+  const fitnessStaff = await prisma.user.create({
+    data: {
+      email: 'staff@elitefitness.com',
+      username: 'fitstaff',
+      password: fitnessStaffPasswordHash,
+      firstName: 'Sarah',
+      lastName: 'Johnson',
+      role: 'CLUB_STAFF',
+      clubId: fitnessClub.id,
+    },
+  });
+  console.log(`Created club staff: ${fitnessStaff.email}`);
+
+  const yogaAdminPasswordHash = await bcrypt.hash('yogaadmin123', 10);
+  const yogaAdmin = await prisma.user.create({
+    data: {
+      email: 'contact@zenyoga.com',
+      username: 'yogaadmin',
+      password: yogaAdminPasswordHash,
+      firstName: 'Mary',
+      lastName: 'Chen',
+      role: 'CLUB_ADMIN',
+      clubId: yogaStudio.id,
+    },
+  });
+  console.log(`Created club admin: ${yogaAdmin.email}`);
+
+  // Create customers (end users who buy subscriptions)
+  const customer1 = await prisma.customer.create({
+    data: {
+      email: 'alice@example.com',
+      firstName: 'Alice',
+      lastName: 'Wilson',
+      phone: '+1-555-1001',
+      dateOfBirth: new Date('1990-05-15'),
+      address: '789 Customer Street',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94103',
+      emergencyContactName: 'Bob Wilson',
+      emergencyContactPhone: '+1-555-1002',
+      clubId: fitnessClub.id,
+    },
+  });
+  console.log(`Created customer: ${customer1.email}`);
+
+  const customer2 = await prisma.customer.create({
+    data: {
+      email: 'bob@example.com',
+      firstName: 'Bob',
+      lastName: 'Davis',
+      phone: '+1-555-2001',
+      dateOfBirth: new Date('1985-08-20'),
+      address: '321 Yoga Avenue',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '90211',
+      clubId: yogaStudio.id,
+    },
+  });
+  console.log(`Created customer: ${customer2.email}`);
 
   // Create subscription packages
-  const monthlyPackage = await prisma.subscriptionPackage.create({
+  const monthlyFitnessPackage = await prisma.subscriptionPackage.create({
     data: {
-      name: 'Monthly Standard',
-      description: 'Standard monthly access to our facility',
+      name: 'Monthly Elite Access',
+      description: 'Full gym access with premium amenities',
       type: 'MONTHLY',
-      price: 49.99,
+      price: 89.99,
       duration: 30,
-      features: ['Gym access', 'Locker rooms', 'Standard equipment'],
+      maxCheckins: 30,
+      features: ['24/7 gym access', 'All equipment', 'Locker access', 'Shower facilities'],
+      isActive: true,
       isPopular: true,
       clubId: fitnessClub.id,
     },
   });
-  console.log(`Created package: ${monthlyPackage.name}`);
+  console.log(`Created package: ${monthlyFitnessPackage.name}`);
 
-  const yearlyPackage = await prisma.subscriptionPackage.create({
+  const yearlyFitnessPackage = await prisma.subscriptionPackage.create({
     data: {
-      name: 'Yearly Premium',
-      description: 'Full yearly access with premium benefits',
+      name: 'Annual Elite Membership',
+      description: 'Best value annual membership with all perks',
       type: 'YEARLY',
-      price: 499.99,
-      discountPrice: 449.99,
+      price: 999.99,
+      discountPrice: 799.99,
       duration: 365,
-      features: ['24/7 access', 'All classes included', 'Personal trainer sessions', 'Towel service', 'Sauna access'],
-      isPopular: false,
+      features: ['Everything in monthly', 'Personal trainer sessions', 'Nutrition consultation', 'Guest passes'],
+      isActive: true,
+      isFeatured: true,
       clubId: fitnessClub.id,
     },
   });
-  console.log(`Created package: ${yearlyPackage.name}`);
+  console.log(`Created package: ${yearlyFitnessPackage.name}`);
+
+  const monthlyYogaPackage = await prisma.subscriptionPackage.create({
+    data: {
+      name: 'Monthly Zen Pass',
+      description: 'Unlimited yoga classes and meditation sessions',
+      type: 'MONTHLY',
+      price: 59.99,
+      duration: 30,
+      features: ['Unlimited classes', 'Mat rental included', 'Meditation sessions'],
+      isActive: true,
+      isPopular: true,
+      clubId: yogaStudio.id,
+    },
+  });
+  console.log(`Created package: ${monthlyYogaPackage.name}`);
 
   // Create events
-  const event1 = await prisma.event.create({
+  const fitnessEvent = await prisma.event.create({
     data: {
-      name: 'Morning Yoga',
-      description: 'Start your day with a refreshing yoga session',
-      startTime: new Date('2025-06-15T08:00:00Z'),
-      endTime: new Date('2025-06-15T09:30:00Z'),
-      location: 'Studio A',
+      name: 'HIIT Bootcamp',
+      description: 'High-intensity interval training for all levels',
+      startTime: new Date('2025-06-15T18:00:00Z'),
+      endTime: new Date('2025-06-15T19:00:00Z'),
+      location: 'Main Gym Floor',
       maxCapacity: 20,
-      clubId: yogaClub.id,
+      currentCapacity: 0,
+      requiresSubscription: true,
+      clubId: fitnessClub.id,
     },
   });
-  console.log(`Created event: ${event1.name}`);
+  console.log(`Created event: ${fitnessEvent.name}`);
 
-  const event2 = await prisma.event.create({
+  const yogaEvent = await prisma.event.create({
     data: {
-      name: 'HIIT Training',
-      description: 'High-intensity interval training for maximum results',
-      startTime: new Date('2025-06-16T18:00:00Z'),
-      endTime: new Date('2025-06-16T19:00:00Z'),
-      location: 'Fitness Room B',
+      name: 'Morning Flow',
+      description: 'Gentle vinyasa flow to start your day',
+      startTime: new Date('2025-06-16T08:00:00Z'),
+      endTime: new Date('2025-06-16T09:30:00Z'),
+      location: 'Studio A',
       maxCapacity: 15,
-      clubId: fitnessClub.id,
+      currentCapacity: 0,
+      requiresSubscription: true,
+      allowWalkIns: true,
+      walkInPrice: 25.00,
+      clubId: yogaStudio.id,
     },
   });
-  console.log(`Created event: ${event2.name}`);
+  console.log(`Created event: ${yogaEvent.name}`);
 
-  // Create subscription for the user
+  // Create subscriptions for customers
   const now = new Date();
-  const userSubscription = await prisma.subscription.create({
+  const customer1Subscription = await prisma.subscription.create({
     data: {
-      name: 'Monthly Subscription',
+      name: 'Alice Monthly Membership',
       type: 'MONTHLY',
-      price: monthlyPackage.price,
-      duration: monthlyPackage.duration,
+      status: 'ACTIVE',
+      originalPrice: monthlyFitnessPackage.price,
+      finalPrice: monthlyFitnessPackage.price,
+      duration: monthlyFitnessPackage.duration,
+      maxCheckins: monthlyFitnessPackage.maxCheckins,
+      usedCheckins: 5,
       startDate: now,
-      endDate: new Date(now.getTime() + monthlyPackage.duration * 24 * 60 * 60 * 1000),
-      userId: user.id,
+      endDate: new Date(now.getTime() + monthlyFitnessPackage.duration * 24 * 60 * 60 * 1000),
+      paymentStatus: 'COMPLETED',
+      customerId: customer1.id,
       clubId: fitnessClub.id,
-      packageId: monthlyPackage.id,
+      packageId: monthlyFitnessPackage.id,
     },
   });
-  console.log(`Created subscription for user: ${userSubscription.name}`);
+  console.log(`Created subscription: ${customer1Subscription.name}`);
 
-  // Create QR code for the subscription
-  const qrCode = await prisma.qRCode.create({
+  const customer2Subscription = await prisma.subscription.create({
     data: {
-      code: `USER-${user.id}-SUB-${userSubscription.id}`,
-      userId: user.id,
-      subscriptionId: userSubscription.id,
-      expiresAt: userSubscription.endDate,
+      name: 'Bob Monthly Zen Pass',
+      type: 'MONTHLY',
+      status: 'ACTIVE',
+      originalPrice: monthlyYogaPackage.price,
+      finalPrice: monthlyYogaPackage.price,
+      duration: monthlyYogaPackage.duration,
+      startDate: now,
+      endDate: new Date(now.getTime() + monthlyYogaPackage.duration * 24 * 60 * 60 * 1000),
+      paymentStatus: 'COMPLETED',
+      customerId: customer2.id,
+      clubId: yogaStudio.id,
+      packageId: monthlyYogaPackage.id,
     },
   });
-  console.log(`Created QR code: ${qrCode.code}`);
+  console.log(`Created subscription: ${customer2Subscription.name}`);
 
-  // Create additional QR codes for testing
+  // Create QR codes for subscriptions
   const qrCode1 = await prisma.qRCode.create({
     data: {
-      code: 'USER-user1-SUB-sub1',
-      userId: user.id,
-      subscriptionId: userSubscription.id,
-      expiresAt: userSubscription.endDate,
+      code: `QR-${customer1.id}-${customer1Subscription.id}`,
+      clubId: fitnessClub.id,
+      customerId: customer1.id,
+      subscriptionId: customer1Subscription.id,
+      expiresAt: customer1Subscription.endDate,
+      usageCount: 5,
+      lastUsedAt: new Date(),
     },
   });
-  console.log(`Created test QR code: ${qrCode1.code}`);
+  console.log(`Created QR code: ${qrCode1.code}`);
 
   const qrCode2 = await prisma.qRCode.create({
     data: {
-      code: 'USER-user2-SUB-sub2',
-      userId: user.id,
-      subscriptionId: userSubscription.id,
-      expiresAt: userSubscription.endDate,
+      code: `QR-${customer2.id}-${customer2Subscription.id}`,
+      clubId: yogaStudio.id,
+      customerId: customer2.id,
+      subscriptionId: customer2Subscription.id,
+      expiresAt: customer2Subscription.endDate,
     },
   });
-  console.log(`Created test QR code: ${qrCode2.code}`);
+  console.log(`Created QR code: ${qrCode2.code}`);
 
-  // Create check-in log
-  const checkinLog = await prisma.checkinLog.create({
+  // Create check-in logs
+  const checkinLog1 = await prisma.checkinLog.create({
     data: {
       type: 'CHECKIN',
-      userId: user.id,
-      eventId: event2.id,
-      subscriptionId: userSubscription.id,
-      qrCodeId: qrCode.id,
+      clubId: fitnessClub.id,
+      customerId: customer1.id,
+      eventId: fitnessEvent.id,
+      subscriptionId: customer1Subscription.id,
+      qrCodeId: qrCode1.id,
       location: 'Main Entrance',
-      notes: 'First visit',
+      processedBy: fitnessStaff.id,
+      notes: 'Regular member check-in',
     },
   });
-  console.log(`Created check-in log at ${checkinLog.timestamp}`);
+  console.log(`Created check-in log at ${checkinLog1.timestamp}`);
 
-  console.log('Database seeding completed!');
+  // Create payment records
+  const payment1 = await prisma.payment.create({
+    data: {
+      amount: monthlyFitnessPackage.price,
+      currency: 'USD',
+      status: 'COMPLETED',
+      method: 'CREDIT_CARD',
+      netAmount: monthlyFitnessPackage.price * 0.97, // After processing fees
+      transactionFee: monthlyFitnessPackage.price * 0.03,
+      description: 'Monthly Elite Access subscription',
+      clubId: fitnessClub.id,
+      customerId: customer1.id,
+      subscriptionId: customer1Subscription.id,
+    },
+  });
+  console.log(`Created payment record: $${payment1.amount}`);
+
+  console.log('B2B SaaS database seeding completed!');
+  console.log('\n=== Login Credentials ===');
+  console.log('System Admin: system@qrcheckin.com / systemadmin123');
+  console.log('Fitness Club Admin: admin@elitefitness.com / fitadmin123');
+  console.log('Fitness Club Staff: staff@elitefitness.com / fitstaff123');
+  console.log('Yoga Studio Admin: contact@zenyoga.com / yogaadmin123');
 }
 
 main()

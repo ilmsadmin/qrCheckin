@@ -27,7 +27,7 @@ export class EventsService {
         club: true,
         checkinLogs: {
           include: {
-            user: {
+            customer: {
               select: {
                 id: true,
                 firstName: true,
@@ -150,12 +150,15 @@ export class EventsService {
       where: { id }
     });
 
+    console.log('Remove - Found existing event:', existingEvent);
+
     if (!existingEvent) {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
 
+    console.log('Deactivating event...');
     // Soft delete by setting isActive to false
-    return this.prisma.event.update({
+    const deactivatedEvent = await this.prisma.event.update({
       where: { id },
       data: { isActive: false },
       include: {
@@ -165,6 +168,44 @@ export class EventsService {
         }
       }
     });
+
+    console.log('Event deactivated successfully:', deactivatedEvent);
+    return deactivatedEvent;
+  }
+
+  async reactivate(id: string) {
+    // Check if event exists
+    const existingEvent = await this.prisma.event.findUnique({
+      where: { id }
+    });
+
+    console.log('Reactivate - Found existing event:', existingEvent);
+
+    if (!existingEvent) {
+      throw new NotFoundException(`Event with ID ${id} not found`);
+    }
+
+    // Check if event is already active
+    if (existingEvent.isActive) {
+      console.log('Event is already active, throwing error');
+      throw new BadRequestException('Event is already active');
+    }
+
+    console.log('Reactivating event...');
+    // Reactivate by setting isActive to true
+    const reactivatedEvent = await this.prisma.event.update({
+      where: { id },
+      data: { isActive: true },
+      include: {
+        club: true,
+        _count: {
+          select: { checkinLogs: true }
+        }
+      }
+    });
+
+    console.log('Event reactivated successfully:', reactivatedEvent);
+    return reactivatedEvent;
   }
 
   async delete(id: string) {

@@ -25,7 +25,7 @@ export class EventsResolver {
 
   @Mutation(() => String)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.STAFF)
+  @Roles(Role.CLUB_ADMIN, Role.CLUB_STAFF)
   async createEvent(@Args('input') createEventInput: CreateEventInput) {
     const event = await this.eventsService.create(createEventInput);
     return JSON.stringify(event);
@@ -33,7 +33,7 @@ export class EventsResolver {
 
   @Mutation(() => String)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.STAFF)
+  @Roles(Role.CLUB_ADMIN, Role.CLUB_STAFF)
   async updateEvent(
     @Args('id') id: string,
     @Args('input') updateEventInput: UpdateEventInput
@@ -44,7 +44,7 @@ export class EventsResolver {
 
   @Mutation(() => String)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.CLUB_ADMIN)
   async removeEvent(@Args('id') id: string) {
     const event = await this.eventsService.remove(id);
     return JSON.stringify(event);
@@ -52,7 +52,15 @@ export class EventsResolver {
 
   @Mutation(() => String)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.CLUB_ADMIN)
+  async reactivateEvent(@Args('id') id: string) {
+    const event = await this.eventsService.reactivate(id);
+    return JSON.stringify(event);
+  }
+
+  @Mutation(() => String)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CLUB_ADMIN)
   async deleteEvent(@Args('id') id: string) {
     const result = await this.eventsService.delete(id);
     return JSON.stringify({ success: true, deletedEvent: result });

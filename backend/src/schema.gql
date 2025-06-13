@@ -7,6 +7,24 @@ type AuthResponse {
   user: User!
 }
 
+type CheckinLog {
+  action: String!
+  event: Event!
+  eventId: ID!
+  id: ID!
+  location: String
+  notes: String
+  timestamp: DateTime!
+  type: CheckinType!
+  user: User!
+  userId: ID!
+}
+
+enum CheckinType {
+  CHECKIN
+  CHECKOUT
+}
+
 type Club {
   createdAt: DateTime!
   description: String
@@ -26,10 +44,45 @@ input CreateEventInput {
   startTime: String!
 }
 
+type Customer {
+  address: String
+  city: String
+  country: String
+  createdAt: DateTime!
+  dateOfBirth: DateTime
+  email: String!
+  emergencyContactName: String
+  emergencyContactPhone: String
+  firstName: String!
+  gender: String
+  id: ID!
+  isActive: Boolean!
+  lastName: String!
+  marketingOptIn: Boolean!
+  phone: String
+  postalCode: String
+  state: String
+  updatedAt: DateTime!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+type Event {
+  clubId: ID!
+  createdAt: String!
+  description: String
+  endTime: String!
+  id: ID!
+  isActive: Boolean!
+  location: String
+  maxCapacity: Float
+  name: String!
+  startTime: String!
+  updatedAt: String!
+}
 
 input LoginInput {
   email: String!
@@ -37,11 +90,13 @@ input LoginInput {
 }
 
 type Mutation {
-  checkin(eventId: String!, qrCodeId: String!): String!
-  checkout(eventId: String!, qrCodeId: String!): String!
-  createClub(description: String, name: String!): Club!
+  cancelSubscription(id: ID!): String!
+  checkin(eventId: String!, qrCodeId: String!): CheckinLog!
+  checkout(eventId: String!, qrCodeId: String!): CheckinLog!
+  createClub(contactEmail: String!, description: String, name: String!, subdomain: String!): Club!
   createEvent(input: CreateEventInput!): String!
   createSubscription(clubId: ID!, duration: Float!, name: String!, packageId: ID, price: Float!, type: String!): Subscription!
+  createSubscriptionFromPackage(packageId: ID!, userId: ID!): String!
   createSubscriptionPackage(clubId: String!, description: String, discountPrice: Float, duration: Float!, features: [String!], isPopular: Boolean, maxCheckins: Float, name: String!, price: Float!, sortOrder: Float, type: String!): String!
   deleteEvent(id: String!): String!
   deleteSubscriptionPackage(id: String!): String!
@@ -49,6 +104,8 @@ type Mutation {
   generateUserQRCode(userId: ID!): QRCode!
   login(input: LoginInput!): AuthResponse!
   logout: String!
+  reactivateEvent(id: String!): String!
+  reactivateSubscription(id: ID!): String!
   register(input: RegisterInput!): User!
   removeClub(id: ID!): Club!
   removeEvent(id: String!): String!
@@ -69,7 +126,7 @@ type QRCode {
 
 type Query {
   allSubscriptionPackages(includeInactive: Boolean): String!
-  checkinLogs(eventId: String, userId: String): String!
+  checkinLogs(clubId: String, customerId: String, eventId: String, limit: Int, offset: Int): [CheckinLog!]!
   club(id: ID!): Club!
   clubs: [Club!]!
   event(id: String!): String!
@@ -81,7 +138,8 @@ type Query {
   subscriptionPackage(id: String!): String!
   subscriptionPackagesByClub(clubId: String!, includeInactive: Boolean): String!
   user(id: ID!): User!
-  userSubscriptions(userId: ID): [Subscription!]!
+  userCheckinLogs(limit: Int, offset: Int, userId: ID): [CheckinLog!]!
+  userSubscriptions(userId: ID): String!
   users: [User!]!
 }
 
@@ -94,14 +152,18 @@ input RegisterInput {
 }
 
 enum Role {
-  ADMIN
-  STAFF
-  USER
+  CLUB_ADMIN
+  CLUB_STAFF
+  CUSTOMER
+  SYSTEM_ADMIN
 }
 
 type Subscription {
   club: Club!
+  clubId: ID!
   createdAt: DateTime!
+  customer: Customer!
+  customerId: ID!
   duration: Int!
   endDate: DateTime!
   id: ID!
@@ -113,7 +175,6 @@ type Subscription {
   startDate: DateTime!
   type: SubscriptionType!
   updatedAt: DateTime!
-  user: User!
 }
 
 type SubscriptionPackage {

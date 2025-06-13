@@ -49,6 +49,19 @@ export default function AdminSubscriptionPackages() {
   const [filterType, setFilterType] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPackage, setEditingPackage] = useState<SubscriptionPackage | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'MONTHLY',
+    price: '',
+    discountPrice: '',
+    duration: '',
+    maxCheckins: '',
+    clubId: '',
+    features: [] as string[],
+    isPopular: false
+  });
+  const [featureInput, setFeatureInput] = useState('');
 
   const { data: packagesData, loading: packagesLoading, error: packagesError, refetch: refetchPackages } = useQuery(GET_ALL_SUBSCRIPTION_PACKAGES, {
     variables: { includeInactive: true }
@@ -103,6 +116,155 @@ export default function AdminSubscriptionPackages() {
       refetchPackages();
     } catch (error) {
       console.error('Error toggling package status:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      type: 'MONTHLY',
+      price: '',
+      discountPrice: '',
+      duration: '',
+      maxCheckins: '',
+      clubId: '',
+      features: [],
+      isPopular: false
+    });
+    setFeatureInput('');
+  };
+
+  const handleCreatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const input = {
+        name: formData.name,
+        description: formData.description || undefined,
+        type: formData.type,
+        price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : undefined,
+        duration: parseFloat(formData.duration),
+        maxCheckins: formData.maxCheckins ? parseInt(formData.maxCheckins) : undefined,
+        clubId: formData.clubId,
+        features: formData.features.length > 0 ? formData.features : undefined,
+        isPopular: formData.isPopular
+      };
+
+      const result = await createPackage({ variables: input });
+      
+      if (result.data?.createSubscriptionPackage) {
+        const newPackage = JSON.parse(result.data.createSubscriptionPackage);
+        setPackages(prevPackages => [...prevPackages, newPackage]);
+        resetForm();
+        setShowCreateModal(false);
+        alert('Package created successfully!');
+      }
+    } catch (error) {
+      console.error('Error creating package:', error);
+      alert('Failed to create package. Please try again.');
+    }
+  };
+
+  const handleUpdatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPackage) return;
+
+    try {
+      const input = {
+        id: editingPackage.id,
+        name: formData.name,
+        description: formData.description || undefined,
+        type: formData.type,
+        price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : undefined,
+        duration: parseFloat(formData.duration),
+        maxCheckins: formData.maxCheckins ? parseInt(formData.maxCheckins) : undefined,
+        features: formData.features.length > 0 ? formData.features : undefined,
+        isPopular: formData.isPopular
+      };
+
+      const result = await updatePackage({ variables: input });
+      
+      if (result.data?.updateSubscriptionPackage) {
+        const updatedPackage = JSON.parse(result.data.updateSubscriptionPackage);
+        setPackages(prevPackages => 
+          prevPackages.map(pkg => 
+            pkg.id === editingPackage.id ? updatedPackage : pkg
+          )
+        );
+        resetForm();
+        setEditingPackage(null);
+        alert('Package updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating package:', error);
+      alert('Failed to update package. Please try again.');
+    }
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (pkg: SubscriptionPackage) => {
+    setEditingPackage(pkg);
+    setFormData({
+      name: pkg.name,
+      description: pkg.description || '',
+      type: pkg.type,
+      price: pkg.price.toString(),
+      discountPrice: pkg.discountPrice?.toString() || '',
+      duration: pkg.duration.toString(),
+      maxCheckins: pkg.maxCheckins?.toString() || '',
+      clubId: pkg.club.id,
+      features: pkg.features || [],
+      isPopular: pkg.isPopular
+    });
+  };
+
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setEditingPackage(null);
+    resetForm();
+  };
+
+  const addFeature = () => {
+    if (featureInput.trim() && !formData.features.includes(featureInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        features: [...prev.features, featureInput.trim()]
+      }));
+      setFeatureInput('');
+    }
+  };
+
+  const removeFeature = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleDeletePackage = async (packageId: string, packageName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa gói "${packageName}" không? Hành động này không thể hoàn tác.`)) return;
+
+    try {
+      await deletePackage({ variables: { id: packageId } });
+      setPackages(prevPackages => prevPackages.filter(pkg => pkg.id !== packageId));
+      alert('Package deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting package:', error);
+      let errorMessage = 'Unknown error';
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = error.graphQLErrors[0].message;
+      } else if (error.networkError) {
+        errorMessage = `Network error: ${error.networkError.message}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      alert(`Failed to delete package: ${errorMessage}`);
     }
   };
 
@@ -212,7 +374,7 @@ export default function AdminSubscriptionPackages() {
                   Refresh
                 </button>
                 <button 
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => openCreateModal()}
                   type="button" 
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                 >
@@ -332,7 +494,7 @@ export default function AdminSubscriptionPackages() {
                       </p>
                       {packages.length === 0 && (
                         <button 
-                          onClick={() => setShowCreateModal(true)}
+                          onClick={() => openCreateModal()}
                           className="mt-4 bg-blue-600 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
                         >
                           <i className="fas fa-plus mr-2"></i>Create Your First Package
@@ -406,7 +568,7 @@ export default function AdminSubscriptionPackages() {
                               </div>
                               <div className="flex space-x-2">
                                 <button 
-                                  onClick={() => setEditingPackage(pkg)}
+                                  onClick={() => openEditModal(pkg)}
                                   className="text-blue-600 hover:text-blue-900"
                                   title="Edit package"
                                 >
@@ -419,7 +581,11 @@ export default function AdminSubscriptionPackages() {
                                 >
                                   <i className={`fas ${pkg.isActive ? 'fa-pause' : 'fa-play'}`}></i>
                                 </button>
-                                <button className="text-red-600 hover:text-red-900" title="Delete package">
+                                <button 
+                                  onClick={() => handleDeletePackage(pkg.id, pkg.name)}
+                                  className="text-red-600 hover:text-red-900" 
+                                  title="Delete package"
+                                >
                                   <i className="fas fa-trash"></i>
                                 </button>
                               </div>
@@ -445,6 +611,424 @@ export default function AdminSubscriptionPackages() {
             </div>
           </div>
         </div>
+
+        {/* Create Package Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-[700px] shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo Gói Cước Mới</h3>
+                <form onSubmit={handleCreatePackage}>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Tên Gói *
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="clubId" className="block text-sm font-medium text-gray-700 mb-2">
+                        Câu Lạc Bộ *
+                      </label>
+                      <select
+                        id="clubId"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.clubId}
+                        onChange={(e) => setFormData({ ...formData, clubId: e.target.value })}
+                      >
+                        <option value="">Chọn câu lạc bộ</option>
+                        {clubs.map((club) => (
+                          <option key={club.id} value={club.id}>
+                            {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Mô Tả
+                    </label>
+                    <textarea
+                      id="description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+                        Loại Gói *
+                      </label>
+                      <select
+                        id="type"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.type}
+                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      >
+                        <option value="DAILY">Hàng ngày</option>
+                        <option value="WEEKLY">Hàng tuần</option>
+                        <option value="MONTHLY">Hàng tháng</option>
+                        <option value="YEARLY">Hàng năm</option>
+                        <option value="EVENT_SPECIFIC">Theo sự kiện</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+                        Thời Hạn (ngày) *
+                      </label>
+                      <input
+                        type="number"
+                        id="duration"
+                        required
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá (VND) *
+                      </label>
+                      <input
+                        type="number"
+                        id="price"
+                        required
+                        min="0"
+                        step="1000"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="discountPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá Khuyến Mãi (VND)
+                      </label>
+                      <input
+                        type="number"
+                        id="discountPrice"
+                        min="0"
+                        step="1000"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.discountPrice}
+                        onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="maxCheckins" className="block text-sm font-medium text-gray-700 mb-2">
+                      Số Lần Check-in Tối Đa
+                    </label>
+                    <input
+                      type="number"
+                      id="maxCheckins"
+                      min="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.maxCheckins}
+                      onChange={(e) => setFormData({ ...formData, maxCheckins: e.target.value })}
+                      placeholder="Để trống = không giới hạn"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tính Năng
+                    </label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={featureInput}
+                        onChange={(e) => setFeatureInput(e.target.value)}
+                        placeholder="Nhập tính năng..."
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                      />
+                      <button
+                        type="button"
+                        onClick={addFeature}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Thêm
+                      </button>
+                    </div>
+                    {formData.features.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.features.map((feature, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {feature}
+                            <button
+                              type="button"
+                              onClick={() => removeFeature(index)}
+                              className="ml-1 text-blue-600 hover:text-blue-900"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        checked={formData.isPopular}
+                        onChange={(e) => setFormData({ ...formData, isPopular: e.target.checked })}
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Đánh dấu là gói phổ biến</span>
+                    </label>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createLoading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {createLoading ? 'Đang tạo...' : 'Tạo Gói'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Package Modal */}
+        {editingPackage && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-[700px] shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Chỉnh Sửa Gói Cước</h3>
+                <form onSubmit={handleUpdatePackage}>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Tên Gói *
+                      </label>
+                      <input
+                        type="text"
+                        id="edit-name"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Câu Lạc Bộ
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                        value={editingPackage.club.name}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Mô Tả
+                    </label>
+                    <textarea
+                      id="edit-description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-type" className="block text-sm font-medium text-gray-700 mb-2">
+                        Loại Gói *
+                      </label>
+                      <select
+                        id="edit-type"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.type}
+                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      >
+                        <option value="DAILY">Hàng ngày</option>
+                        <option value="WEEKLY">Hàng tuần</option>
+                        <option value="MONTHLY">Hàng tháng</option>
+                        <option value="YEARLY">Hàng năm</option>
+                        <option value="EVENT_SPECIFIC">Theo sự kiện</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="edit-duration" className="block text-sm font-medium text-gray-700 mb-2">
+                        Thời Hạn (ngày) *
+                      </label>
+                      <input
+                        type="number"
+                        id="edit-duration"
+                        required
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="edit-price" className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá (VND) *
+                      </label>
+                      <input
+                        type="number"
+                        id="edit-price"
+                        required
+                        min="0"
+                        step="1000"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-discountPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá Khuyến Mãi (VND)
+                      </label>
+                      <input
+                        type="number"
+                        id="edit-discountPrice"
+                        min="0"
+                        step="1000"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.discountPrice}
+                        onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="edit-maxCheckins" className="block text-sm font-medium text-gray-700 mb-2">
+                      Số Lần Check-in Tối Đa
+                    </label>
+                    <input
+                      type="number"
+                      id="edit-maxCheckins"
+                      min="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.maxCheckins}
+                      onChange={(e) => setFormData({ ...formData, maxCheckins: e.target.value })}
+                      placeholder="Để trống = không giới hạn"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tính Năng
+                    </label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={featureInput}
+                        onChange={(e) => setFeatureInput(e.target.value)}
+                        placeholder="Nhập tính năng..."
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                      />
+                      <button
+                        type="button"
+                        onClick={addFeature}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Thêm
+                      </button>
+                    </div>
+                    {formData.features.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.features.map((feature, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {feature}
+                            <button
+                              type="button"
+                              onClick={() => removeFeature(index)}
+                              className="ml-1 text-blue-600 hover:text-blue-900"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        checked={formData.isPopular}
+                        onChange={(e) => setFormData({ ...formData, isPopular: e.target.checked })}
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Đánh dấu là gói phổ biến</span>
+                    </label>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={updateLoading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {updateLoading ? 'Đang cập nhật...' : 'Cập Nhật'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     </ProtectedRoute>
   )

@@ -91,10 +91,9 @@ export class SubscriptionPackageService {
         club: true,
         subscriptions: {
           include: {
-            user: {
+            customer: {
               select: {
                 id: true,
-                username: true,
                 email: true,
                 firstName: true,
                 lastName: true

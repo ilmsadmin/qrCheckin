@@ -35,6 +35,13 @@ export const REMOVE_EVENT = gql`
   }
 `;
 
+// Mutation to reactivate an event
+export const REACTIVATE_EVENT = gql`
+  mutation ReactivateEvent($id: String!) {
+    reactivateEvent(id: $id)
+  }
+`;
+
 // Mutation to delete (hard delete) an event
 export const DELETE_EVENT = gql`
   mutation DeleteEvent($id: String!) {

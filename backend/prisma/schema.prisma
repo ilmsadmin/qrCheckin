@@ -17,33 +17,117 @@ model User {
   password  String
   firstName String
   lastName  String
-  role      Role     @default(USER)
+  role      Role     @default(CLUB_STAFF)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Multi-tenant fields
+  clubId    String?
+  club      Club?    @relation(fields: [clubId], references: [id])
+
   // Relations
-  subscriptions Subscription[]
-  checkinLogs   CheckinLog[]
-  qrCodes       QRCode[]
+  processedLogs   CheckinLog[]  @relation("ProcessedByStaff")
 
   @@map("users")
 }
 
 model Club {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  subdomain       String   @unique // for multi-tenant URLs
+  contactEmail    String
+  contactPhone    String?
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  postalCode      String?
+  logo            String?  // URL to logo image
+  primaryColor    String?  // Brand color
+  secondaryColor  String?  // Brand color
+  
+  // Business details
+  businessType    String?
+  taxId           String?
+  
+  // Platform subscription details
+  planType        ClubPlanType @default(STARTER)
+  planPrice       Float        @default(0)
+  billingCycle    BillingCycle @default(MONTHLY)
+  subscriptionStatus ClubSubscriptionStatus @default(TRIAL)
+  trialEndsAt     DateTime?
+  subscriptionEndsAt DateTime?
+  
+  // Usage limits
+  maxCustomers    Int?
+  maxEvents       Int?
+  maxStaff        Int?
+  
+  // Payment settings
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  
+  // Commission settings
+  commissionRate  Float    @default(0.05) // 5% default
+  
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  users               User[]
+  customers           Customer[]
+  events              Event[]
+  subscriptions       Subscription[]
+  subscriptionPackages SubscriptionPackage[]
+  qrCodes             QRCode[]
+  checkinLogs         CheckinLog[]
+  payments            Payment[]
+  payouts             Payout[]
+
+  @@map("clubs")
+}
+
+model Customer {
   id          String   @id @default(cuid())
-  name        String
-  description String?
+  email       String
+  firstName   String
+  lastName    String
+  phone       String?
+  dateOfBirth DateTime?
+  gender      String?
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  
+  // Emergency contact
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  
+  // Preferences
+  notifications Boolean  @default(true)
+  marketing     Boolean  @default(false)
+  
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  events              Event[]
-  subscriptions       Subscription[]
-  subscriptionPackages SubscriptionPackage[]
+  // Multi-tenant
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id])
 
-  @@map("clubs")
+  // Relations
+  subscriptions Subscription[]
+  checkinLogs   CheckinLog[]
+  qrCodes       QRCode[]
+  payments      Payment[]
+
+  @@unique([email, clubId]) // Unique per club
+  @@map("customers")
 }
 
 model Event {
@@ -54,13 +138,26 @@ model Event {
   endTime     DateTime
   location    String?
   maxCapacity Int?
+  currentCapacity Int   @default(0)
+  
+  // Event settings
+  requiresSubscription Boolean @default(true)
+  allowWalkIns        Boolean @default(false)
+  walkInPrice         Float?
+  
+  // Images and media
+  coverImage          String?
+  gallery             String[] // Array of image URLs
+  
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Relations
+  // Multi-tenant
   club        Club         @relation(fields: [clubId], references: [id])
   clubId      String
+  
+  // Relations
   checkinLogs CheckinLog[]
 
   @@map("events")
@@ -70,24 +167,42 @@ model Subscription {
   id          String           @id @default(cuid())
   name        String
   type        SubscriptionType
-  price       Float
-  duration    Int // days
-  maxCheckins Int?
-  isActive    Boolean          @default(true)
-  startDate   DateTime
-  endDate     DateTime
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  status      SubscriptionStatus @default(ACTIVE)
+  
+  // Pricing
+  originalPrice Float
+  finalPrice    Float // After any discounts
+  
+  // Duration and usage
+  duration      Int // days
+  maxCheckins   Int?
+  usedCheckins  Int @default(0)
+  
+  // Dates
+  startDate     DateTime
+  endDate       DateTime
+  
+  // Payment tracking
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String?
+  stripePaymentIntentId String?
+  
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
+  // Multi-tenant
+  clubId        String
+  club          Club             @relation(fields: [clubId], references: [id])
+  
   // Relations
-  user        User         @relation(fields: [userId], references: [id])
-  userId      String
-  club        Club         @relation(fields: [clubId], references: [id])
-  clubId      String
-  package     SubscriptionPackage? @relation(fields: [packageId], references: [id])
-  packageId   String?
-  qrCodes     QRCode[]
-  checkinLogs CheckinLog[]
+  customer      Customer         @relation(fields: [customerId], references: [id])
+  customerId    String
+  package       SubscriptionPackage? @relation(fields: [packageId], references: [id])
+  packageId     String?
+  qrCodes       QRCode[]
+  checkinLogs   CheckinLog[]
+  payments      Payment[]
 
   @@map("subscriptions")
 }
@@ -102,15 +217,29 @@ model SubscriptionPackage {
   duration        Int              // days
   maxCheckins     Int?
   features        String[]         // JSON array of features
+  
+  // Display settings
   isActive        Boolean          @default(true)
   isPopular       Boolean          @default(false)
+  isFeatured      Boolean          @default(false)
   sortOrder       Int              @default(0)
+  
+  // Images and branding
+  image           String?
+  color           String?
+  
+  // Terms and conditions
+  terms           String?
+  refundPolicy    String?
+  
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  // Relations
+  // Multi-tenant
   club           Club           @relation(fields: [clubId], references: [id])
   clubId         String
+  
+  // Relations
   subscriptions  Subscription[]
 
   @@map("subscription_packages")
@@ -121,12 +250,18 @@ model QRCode {
   code         String   @unique
   isActive     Boolean  @default(true)
   expiresAt    DateTime?
+  lastUsedAt   DateTime?
+  usageCount   Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Multi-tenant
+  clubId         String
+
   // Relations
-  user           User         @relation(fields: [userId], references: [id])
-  userId         String
+  club           Club         @relation(fields: [clubId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  customerId     String
   subscription   Subscription @relation(fields: [subscriptionId], references: [id])
   subscriptionId String
   checkinLogs    CheckinLog[]
@@ -140,10 +275,22 @@ model CheckinLog {
   timestamp DateTime    @default(now())
   location  String?
   notes     String?
+  
+  // Staff who processed the checkin
+  processedBy     String?
+  processedByUser User?        @relation("ProcessedByStaff", fields: [processedBy], references: [id])
+  
+  // Validation status
+  isValid     Boolean     @default(true)
+  errorMessage String?
+
+  // Multi-tenant
+  clubId      String
+  club        Club        @relation(fields: [clubId], references: [id])
 
   // Relations
-  user           User         @relation(fields: [userId], references: [id])
-  userId         String
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  customerId     String
   event          Event        @relation(fields: [eventId], references: [id])
   eventId        String
   subscription   Subscription @relation(fields: [subscriptionId], references: [id])
@@ -154,10 +301,136 @@ model CheckinLog {
   @@map("checkin_logs")
 }
 
+model Payment {
+  id                String         @id @default(cuid())
+  amount            Float
+  currency          String         @default("USD")
+  status            PaymentStatus
+  method            PaymentMethod
+  
+  // Payment processor details
+  stripePaymentIntentId String?
+  stripeChargeId        String?
+  
+  // Transaction details
+  transactionFee        Float?
+  netAmount            Float // Amount after fees
+  
+  // Refund details
+  refundAmount         Float?
+  refundReason         String?
+  refundedAt          DateTime?
+  
+  // Description and metadata
+  description          String?
+  metadata             Json? // Additional data
+  
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  // Multi-tenant
+  clubId               String
+  club                 Club           @relation(fields: [clubId], references: [id])
+
+  // Relations
+  customer             Customer       @relation(fields: [customerId], references: [id])
+  customerId           String
+  subscription         Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId       String?
+
+  @@map("payments")
+}
+
+model Payout {
+  id              String        @id @default(cuid())
+  amount          Float
+  currency        String        @default("USD")
+  status          PayoutStatus  @default(PENDING)
+  
+  // Commission calculation
+  totalRevenue    Float
+  commissionRate  Float
+  commissionAmount Float
+  
+  // Period covered
+  periodStart     DateTime
+  periodEnd       DateTime
+  
+  // Payout details
+  stripeTransferId String?
+  bankAccount      String? // Last 4 digits
+  
+  // Metadata
+  description     String?
+  notes           String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  paidAt          DateTime?
+
+  // Relations
+  club            Club          @relation(fields: [clubId], references: [id])
+  clubId          String
+
+  @@map("payouts")
+}
+
 enum Role {
-  ADMIN
-  STAFF
-  USER
+  SYSTEM_ADMIN
+  CLUB_ADMIN
+  CLUB_STAFF
+  CUSTOMER
+}
+
+enum ClubPlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum ClubSubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+  PAUSED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELED
 }
 
 enum SubscriptionType {

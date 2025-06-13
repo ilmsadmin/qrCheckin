@@ -41,9 +41,19 @@ export class ClubsService {
     });
   }
 
-  async create(data: { name: string; description?: string }) {
+  async create(data: { 
+    name: string; 
+    description?: string; 
+    subdomain: string; 
+    contactEmail: string;
+  }) {
     return this.prisma.club.create({
-      data,
+      data: {
+        name: data.name,
+        description: data.description,
+        subdomain: data.subdomain,
+        contactEmail: data.contactEmail,
+      },
     });
   }
 

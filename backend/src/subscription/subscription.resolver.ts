@@ -37,20 +37,21 @@ export class SubscriptionResolver {
     });
   }
 
-  @Query(() => [Subscription])
+  @Query(() => String)
   async userSubscriptions(
     @Args('userId', { type: () => ID, nullable: true }) userId: string,
     @CurrentUser() currentUser: User,
-  ): Promise<Subscription[]> {
+  ): Promise<string> {
     // If no userId provided, return current user's subscriptions
     const targetUserId = userId || currentUser.id;
     
-    // Only allow users to see their own subscriptions unless they are admin/staff
-    if (currentUser.role === Role.USER && currentUser.id !== targetUserId) {
+    // Only allow customers to see their own subscriptions unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== targetUserId) {
       throw new Error('Unauthorized to access subscriptions');
     }
     
-    return this.subscriptionService.getUserSubscriptions(targetUserId);
+    const subscriptions = await this.subscriptionService.getCustomerSubscriptions(targetUserId);
+    return JSON.stringify(subscriptions);
   }
 
   @Query(() => Subscription)
@@ -60,12 +61,64 @@ export class SubscriptionResolver {
   ): Promise<Subscription> {
     const subscription = await this.subscriptionService.getSubscriptionById(id);
     
-    // Only allow users to see their own subscriptions unless they are admin/staff
-    if (currentUser.role === Role.USER && currentUser.id !== subscription.user.id) {
+    // Only allow customers to see their own subscriptions unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== subscription.customer.id) {
       throw new Error('Unauthorized to access this subscription');
     }
     
     return subscription;
+  }
+
+  @Mutation(() => String)
+  async createSubscriptionFromPackage(
+    @Args('packageId', { type: () => ID }) packageId: string,
+    @Args('userId', { type: () => ID }) userId: string,
+    @CurrentUser() currentUser: User,
+  ): Promise<string> {
+    // Only allow customers to create subscriptions for themselves unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== userId) {
+      throw new Error('Unauthorized to create subscription for this user');
+    }
+
+    const subscription = await this.subscriptionService.createSubscription({
+      userId,
+      packageId,
+      startDate: new Date(),
+    });
+    
+    return JSON.stringify(subscription);
+  }
+
+  @Mutation(() => String)
+  async cancelSubscription(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() currentUser: User,
+  ): Promise<string> {
+    const subscription = await this.subscriptionService.getSubscriptionById(id);
+    
+    // Only allow users to cancel their own subscriptions unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== subscription.customer.id) {
+      throw new Error('Unauthorized to cancel this subscription');
+    }
+    
+    const result = await this.subscriptionService.cancelSubscription(id);
+    return JSON.stringify(result);
+  }
+
+  @Mutation(() => String)
+  async reactivateSubscription(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() currentUser: User,
+  ): Promise<string> {
+    const subscription = await this.subscriptionService.getSubscriptionById(id);
+    
+    // Only allow customers to reactivate their own subscriptions unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== subscription.customer.id) {
+      throw new Error('Unauthorized to reactivate this subscription');
+    }
+    
+    const result = await this.subscriptionService.reactivateSubscription(id);
+    return JSON.stringify(result);
   }
 
   @Mutation(() => String)
@@ -75,12 +128,12 @@ export class SubscriptionResolver {
   ): Promise<string> {
     const subscription = await this.subscriptionService.getSubscriptionById(subscriptionId);
     
-    // Only allow users to generate QR codes for their own subscriptions unless they are admin/staff
-    if (currentUser.role === Role.USER && currentUser.id !== subscription.user.id) {
+    // Only allow customers to generate QR codes for their own subscriptions unless they are admin/staff
+    if (currentUser.role === Role.CUSTOMER && currentUser.id !== subscription.customer.id) {
       throw new Error('Unauthorized to generate QR code for this subscription');
     }
     
-    const qrCode = await this.subscriptionService.generateQRCode(subscriptionId, subscription.user.id);
+    const qrCode = await this.subscriptionService.generateQRCode(subscriptionId, subscription.customer.id, subscription.clubId);
     return JSON.stringify(qrCode);
   }
 }
