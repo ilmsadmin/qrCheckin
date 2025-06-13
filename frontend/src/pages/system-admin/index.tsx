@@ -19,8 +19,14 @@ interface PlatformStats {
 export default function SystemAdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   
-  // Mock data for now - will be replaced with real API data
-  const platformStats: PlatformStats = {
+  // Fetch platform stats from API
+  const { data: platformStatsData, loading: statsLoading, error: statsError } = useQuery(GET_PLATFORM_STATS, {
+    fetchPolicy: 'cache-and-network',
+    errorPolicy: 'all'
+  })
+  
+  // Use API data if available, otherwise fall back to mock data
+  const platformStats: PlatformStats = platformStatsData?.platformStats || {
     activeClubs: 48,
     totalCustomers: 24521,
     checkinsToday: 8327,
@@ -119,6 +125,43 @@ export default function SystemAdminDashboard() {
               <h2 className="text-2xl font-bold text-gray-800">Platform Overview</h2>
               <p className="text-gray-600">Welcome to the QR Check-in System Admin Dashboard</p>
             </div>
+            
+            {/* Loading State */}
+            {statsLoading && (
+              <div className="bg-white rounded-lg shadow p-8 mb-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  <span className="ml-3 text-gray-600">Loading platform statistics...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {statsError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Error loading platform data
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>{statsError.message}</p>
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Stats Overview */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">

@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
 import ProtectedRoute from '../../components/ProtectedRoute'
+import QRCode from '../../components/QRCode'
 import { useQuery } from '@apollo/client'
 import { GET_CUSTOMER_DASHBOARD } from '../../lib/graphql/customer'
 
@@ -27,8 +28,37 @@ interface CustomerData {
 export default function CustomerPortal() {
   const [showQR, setShowQR] = useState(false)
   
-  // Mock data for now - will be replaced with real API data
-  const customerData: CustomerData = {
+  // Fetch customer data from API
+  const { data: customerDashboardData, loading: dashboardLoading, error: dashboardError } = useQuery(GET_CUSTOMER_DASHBOARD, {
+    fetchPolicy: 'cache-and-network',
+    errorPolicy: 'all'
+  })
+  
+  // Use API data if available, otherwise fall back to mock data
+  const customerData: CustomerData = customerDashboardData?.customerDashboard ? {
+    name: `${customerDashboardData.customerDashboard.customer.firstName} ${customerDashboardData.customerDashboard.customer.lastName}`,
+    membershipStatus: customerDashboardData.customerDashboard.activeSubscription?.status || 'Active',
+    membershipType: customerDashboardData.customerDashboard.activeSubscription?.package?.name || 'Premium Membership',
+    renewalDate: customerDashboardData.customerDashboard.activeSubscription?.expiresAt || 'July 15, 2025',
+    qrCode: customerDashboardData.customerDashboard.activeSubscription?.qrCode?.hash || 'USER-user123-SUB-sub456',
+    recentVisits: customerDashboardData.customerDashboard.recentCheckins?.map((checkin: any) => ({
+      date: new Date(checkin.timestamp).toLocaleDateString(),
+      time: new Date(checkin.timestamp).toLocaleTimeString(),
+      location: checkin.location || 'Main Entrance',
+      type: checkin.type as 'checkin' | 'checkout'
+    })) || [],
+    membershipDetails: {
+      name: customerDashboardData.customerDashboard.activeSubscription?.package?.name || 'Premium Membership',
+      price: `$${customerDashboardData.customerDashboard.activeSubscription?.package?.price || 89.99}/mo`,
+      features: customerDashboardData.customerDashboard.activeSubscription?.package?.features || [
+        'Unlimited gym access',
+        'Group fitness classes',
+        'Pool and sauna access',
+        'Personal trainer (2x/month)',
+        'Nutritional counseling'
+      ]
+    }
+  } : {
     name: 'Sarah Johnson',
     membershipStatus: 'Active',
     membershipType: 'Premium Membership',
@@ -132,15 +162,7 @@ export default function CustomerPortal() {
                 <div className="text-center mb-4">
                   <p className="text-gray-600 mb-2">Present this QR code when you arrive at the club</p>
                 </div>
-                <div className="bg-white p-4 border border-gray-300 rounded-lg mb-6">
-                  <div className="w-64 h-64 bg-gray-100 flex items-center justify-center border">
-                    {/* QR Code placeholder - would be replaced with actual QR code component */}
-                    <div className="text-center">
-                      <i className="fas fa-qrcode text-6xl text-gray-400 mb-2"></i>
-                      <p className="text-sm text-gray-500">QR Code: {customerData.qrCode}</p>
-                    </div>
-                  </div>
-                </div>
+                <QRCode value={customerData.qrCode} size={256} className="mb-6" />
                 <div className="flex space-x-4">
                   <button className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i className="fas fa-download mr-2"></i> Download
