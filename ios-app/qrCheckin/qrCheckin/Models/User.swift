@@ -27,7 +27,7 @@ enum UserRole: String, CaseIterable, Codable {
     }
 }
 
-struct User: Identifiable, Codable {
+struct User: Identifiable, Codable, Equatable {
     let id: String
     let email: String
     let username: String
@@ -76,6 +76,24 @@ struct User: Identifiable, Codable {
     var hasActiveSubscription: Bool {
         guard let subscription = activeSubscription else { return false }
         return subscription.isActive && !subscription.isExpired
+    }
+    
+    // MARK: - Equatable
+    static func == (lhs: User, rhs: User) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.email == rhs.email &&
+               lhs.username == rhs.username &&
+               lhs.firstName == rhs.firstName &&
+               lhs.lastName == rhs.lastName &&
+               lhs.role == rhs.role &&
+               lhs.isActive == rhs.isActive &&
+               lhs.createdAt == rhs.createdAt &&
+               lhs.updatedAt == rhs.updatedAt &&
+               lhs.phone == rhs.phone &&
+               lhs.dateOfBirth == rhs.dateOfBirth &&
+               lhs.qrCode == rhs.qrCode
+        // Note: We compare activeSubscription by subscription ID to avoid infinite recursion
+        // since SubscriptionReference might have circular references
     }
 }
 

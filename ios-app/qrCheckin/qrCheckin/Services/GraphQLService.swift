@@ -380,8 +380,7 @@ class GraphQLService: ObservableObject {
                 do {
                     let members = try JSONDecoder.graphQLDecoder.decode([Member].self, from: jsonData)
                     return members
-                } catch {
-                    print("❌ Member decoding failed: \(error)")
+                } catch {             
                     throw AppError.dataError("Failed to decode members: \(error.localizedDescription)")
                 }
             }
@@ -503,18 +502,12 @@ class GraphQLService: ObservableObject {
         let token = KeychainHelper.shared.load(forKey: Constants.Auth.tokenKey)
         if let token = token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            print("🔑 Using auth token: \(String(token.prefix(20)))...")
-        } else {
-            print("⚠️ No auth token found in keychain")
         }
         
         let body: [String: Any] = [
             "query": query,
             "variables": variables
         ]
-        
-        print("📤 GraphQL Request URL: \(url)")
-        print("📤 GraphQL Query: \(query.prefix(100))...")
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -527,18 +520,13 @@ class GraphQLService: ObservableObject {
             .map(\.data)
             .decode(type: GraphQLResponse<T>.self, decoder: JSONDecoder.graphQLDecoder)
             .tryMap { response in
-                print("📥 GraphQL Response received")
-                
                 if let errors = response.errors, !errors.isEmpty {
                     let errorMessage = errors.first?.message ?? "GraphQL error"
-                    print("❌ GraphQL errors: \(errors)")
                     throw AppError.networkError("Server error: \(errorMessage)")
                 }
                 guard let data = response.data else {
-                    print("❌ No data in GraphQL response")
                     throw AppError.dataError("No data received from server")
                 }
-                print("✅ GraphQL response data received successfully")
                 return data
             }
             .mapError { error in

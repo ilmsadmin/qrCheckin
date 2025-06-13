@@ -12,7 +12,7 @@ enum CheckinType: String, CaseIterable, Codable {
     case checkout = "CHECKOUT"
 }
 
-struct CheckinLog: Identifiable, Codable {
+struct CheckinLog: Identifiable, Codable, Equatable {
     let id: String
     let userId: String?
     let customerId: String?
@@ -87,15 +87,5 @@ struct CheckinLog: Identifiable, Codable {
             let days = Int(timeInterval / 86400)
             return "\(days) day\(days > 1 ? "s" : "") ago"
         }
-    }
-}
-
-extension CheckinLog: Equatable {
-    static func == (lhs: CheckinLog, rhs: CheckinLog) -> Bool {
-        return lhs.id == rhs.id &&
-               lhs.userId == rhs.userId &&
-               lhs.eventId == rhs.eventId &&
-               lhs.type == rhs.type &&
-               lhs.timestamp == rhs.timestamp
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct SubscriptionPackage: Identifiable, Codable {
+struct SubscriptionPackage: Identifiable, Codable, Equatable {
     let id: String
     let name: String
     let description: String?

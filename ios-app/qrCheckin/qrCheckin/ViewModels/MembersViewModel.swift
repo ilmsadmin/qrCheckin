@@ -178,7 +178,6 @@ class MembersViewModel: ObservableObject {
     private func loadMembersAsync() async {
         isLoading = true
         
-        print("🔄 Loading members: search=\(searchText.isEmpty ? "nil" : searchText), status=\(selectedStatus?.rawValue ?? "nil"), offset=\(currentOffset)")
         
         do {
             let newMembers = try await graphQLService.fetchMembersAsync(
@@ -188,8 +187,7 @@ class MembersViewModel: ObservableObject {
                 limit: pageSize
             )
             
-            print("📥 Received \(newMembers.count) members")
-            
+    
             if currentOffset == 0 {
                 members = newMembers
             } else {
@@ -201,7 +199,7 @@ class MembersViewModel: ObservableObject {
             filterMembers()
             
         } catch {
-            print("❌ Error loading members: \(error)")
+        
             showError(AppError.networkError(error.localizedDescription))
         }
         

@@ -10,6 +10,7 @@ import { EventsModule } from './events/events.module';
 import { CheckinModule } from './checkin/checkin.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { ClubsModule } from './clubs/clubs.module';
+import { CustomersModule } from './customers/customers.module';
 import { PrismaService } from './prisma/prisma.service';
 import { RedisModule } from './redis/redis.module';
 import appConfig from './config/app.config';
@@ -50,6 +51,7 @@ import { plainToClass } from 'class-transformer';
     AuthModule,
     UsersModule,
     ClubsModule,
+    CustomersModule,
     EventsModule,
     CheckinModule,
     SubscriptionModule,

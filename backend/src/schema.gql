@@ -129,6 +129,15 @@ type Query {
   checkinLogs(clubId: String, customerId: String, eventId: String, limit: Int, offset: Int): [CheckinLog!]!
   club(id: ID!): Club!
   clubs: [Club!]!
+
+  """Get customer details as JSON string"""
+  customer(id: String!): String!
+
+  """Get customer statistics as JSON string"""
+  customerStats: String!
+
+  """Get all customers as JSON string"""
+  customers(limit: Int = 50, offset: Int = 0, search: String, status: String): String!
   event(id: String!): String!
   events: String!
   me: User!
@@ -215,6 +224,7 @@ input UpdateEventInput {
 }
 
 type User {
+  clubId: String
   createdAt: DateTime!
   email: String!
   firstName: String!

@@ -28,6 +28,9 @@ export class User {
   @Field()
   isActive: boolean;
 
+  @Field({ nullable: true })
+  clubId?: string;
+
   @Field()
   createdAt: Date;
 

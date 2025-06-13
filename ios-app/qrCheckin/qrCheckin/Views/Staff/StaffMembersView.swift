@@ -30,16 +30,14 @@ struct StaffMembersView: View {
             }
             .navigationTitle("Members")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showFilterSheet = true
-                    }) {
-                        Image(systemName: "line.horizontal.3.decrease.circle")
-                            .font(.title3)
-                    }
+            .navigationBarItems(trailing: 
+                Button(action: {
+                    showFilterSheet = true
+                }) {
+                    Image(systemName: "line.horizontal.3.decrease.circle")
+                        .font(.title3)
                 }
-            }
+            )
             .refreshable {
                 await refreshMembers()
             }
@@ -47,9 +45,39 @@ struct StaffMembersView: View {
         .sheet(isPresented: $showFilterSheet) {
             filterSheet
         }
-        .sheet(isPresented: $showMemberDetail) {
-            if let member = selectedMember {
-                MemberDetailView(member: member)
+        .fullScreenCover(isPresented: $showMemberDetail) {
+            VStack {
+                if let member = selectedMember {
+                   
+                    MemberDetailView(member: member)
+                } else {
+             
+                    VStack(spacing: 20) {
+                        Text("Error: No member selected")
+                            .foregroundColor(.red)
+                            .font(.headline)
+                        
+                        Text("Debug Info:")
+                            .font(.subheadline)
+                        
+                        Text("showMemberDetail: \(showMemberDetail)")
+                            .font(.caption)
+                        
+                        Text("selectedMember: \(selectedMember?.fullName ?? "nil")")
+                            .font(.caption)
+                        
+                        Button("Close") {
+                            showMemberDetail = false
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                    .padding()
+                }
+            }
+            .onAppear {
             }
         }
         .alert(membersViewModel.alertTitle, isPresented: $membersViewModel.showAlert) {
@@ -59,6 +87,10 @@ struct StaffMembersView: View {
         }
         .task {
             await loadInitialData()
+        }
+        .onChange(of: selectedMember) { newValue in
+        }
+        .onChange(of: showMemberDetail) { newValue in
         }
     }
     
@@ -167,8 +199,11 @@ struct StaffMembersView: View {
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                             .listRowSeparator(.hidden)
                             .onTapGesture {
+                               
                                 selectedMember = member
+                              
                                 showMemberDetail = true
+    
                             }
                     }
                     
@@ -298,8 +333,8 @@ struct StaffMembersView: View {
                 }
                 
                 // Last visit
-                if let lastCheckin = member.stats?.lastCheckin {
-                    Text("Last visit: \(formatRelativeDate(lastCheckin))")
+                if let lastActivity = member.lastActivity {
+                    Text("Last visit: \(formatRelativeDate(lastActivity))")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -426,221 +461,6 @@ enum MemberFilter: CaseIterable {
         case .paused: return "Paused"
         case .recent: return "Recent"
         }
-    }
-}
-
-// MARK: - Member Detail View
-struct MemberDetailView: View {
-    let member: Member
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Header with profile
-                    memberHeader
-                    
-                    // Subscription details
-                    if let subscription = member.activeSubscription {
-                        subscriptionSection(subscription: subscription)
-                    }
-                    
-                    // QR Code
-                    if let qrCode = member.qrCode {
-                        qrCodeSection(qrCode: qrCode)
-                    }
-                    
-                    // Stats
-                    if let stats = member.stats {
-                        statsSection(stats: stats)
-                    }
-                    
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("Member Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private var memberHeader: some View {
-        VStack(spacing: 16) {
-            // Profile image
-            AsyncImage(url: URL(string: member.profileImageUrl ?? "")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                ZStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                    
-                    Text(member.initials)
-                        .font(.largeTitle)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(width: 100, height: 100)
-            .clipShape(Circle())
-            
-            VStack(spacing: 8) {
-                Text(member.fullName)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text(member.email)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(member.statusColor)
-                        .frame(width: 8, height: 8)
-                    
-                    Text(member.status.rawValue.capitalized)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(member.statusColor)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-    }
-    
-    private func subscriptionSection(subscription: MemberSubscription) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Subscription")
-                .font(.headline)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Package:")
-                    Spacer()
-                    Text(subscription.packageName)
-                        .fontWeight(.medium)
-                }
-                
-                HStack {
-                    Text("Status:")
-                    Spacer()
-                    Text(subscription.status.rawValue.capitalized)
-                        .fontWeight(.medium)
-                        .foregroundColor(subscription.status == .active ? .green : .red)
-                }
-                
-                HStack {
-                    Text("Expires:")
-                    Spacer()
-                    Text(subscription.endDate, style: .date)
-                        .fontWeight(.medium)
-                }
-                
-                if subscription.status == .active {
-                    HStack {
-                        Text("Days remaining:")
-                        Spacer()
-                        Text("\(subscription.daysRemaining)")
-                            .fontWeight(.medium)
-                            .foregroundColor(subscription.daysRemaining < 7 ? .red : .primary)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-    }
-    
-    private func qrCodeSection(qrCode: MemberQRCode) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("QR Code")
-                .font(.headline)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Usage: \(qrCode.usageCount)")
-                        .font(.subheadline)
-                    
-                    if let lastUsed = qrCode.lastUsed {
-                        Text("Last used: \(lastUsed, style: .date)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("Last used: Never")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                // QR Code placeholder
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                        Image(systemName: "qrcode")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                    )
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-    }
-    
-    private func statsSection(stats: MemberIndividualStats) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Statistics")
-                .font(.headline)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                statBox(title: "Total Check-ins", value: "\(stats.totalCheckins)")
-                statBox(title: "This Month", value: "\(stats.checkinsThisMonth)")
-                statBox(title: "Streak", value: "\(stats.currentStreak) days")
-                statBox(title: "Avg/Week", value: String(format: "%.1f", stats.averagePerWeek))
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-    }
-    
-    private func statBox(title: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.blue)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
     }
 }
 

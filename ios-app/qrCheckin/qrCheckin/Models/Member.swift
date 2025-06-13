@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct Member: Identifiable, Codable {
+struct Member: Identifiable, Codable, Equatable {
     let id: String
     let email: String
     let firstName: String
@@ -55,7 +55,7 @@ struct Member: Identifiable, Codable {
     }
 }
 
-struct MemberSubscription: Identifiable, Codable {
+struct MemberSubscription: Identifiable, Codable, Equatable {
     let id: String
     let name: String
     let type: SubscriptionType
@@ -85,7 +85,7 @@ struct MemberSubscription: Identifiable, Codable {
     }
 }
 
-struct MemberQRCode: Identifiable, Codable {
+struct MemberQRCode: Identifiable, Codable, Equatable {
     let id: String
     let code: String
     let usageCount: Int
@@ -128,6 +128,19 @@ enum MemberStatus: String, CaseIterable, Codable {
             return "yellow"
         }
     }
+    
+    var swiftUIColor: Color {
+        switch self {
+        case .active:
+            return .green
+        case .expired:
+            return .orange
+        case .canceled:
+            return .red
+        case .paused:
+            return .yellow
+        }
+    }
 }
 
 enum PaymentStatus: String, Codable {
@@ -139,7 +152,7 @@ enum PaymentStatus: String, Codable {
     case canceled = "CANCELED"
 }
 
-struct Payment: Identifiable, Codable {
+struct Payment: Identifiable, Codable, Equatable {
     let id: String
     let amount: Double
     let currency: String
@@ -151,7 +164,7 @@ struct Payment: Identifiable, Codable {
     let createdAt: Date
 }
 
-struct MemberStats: Codable {
+struct MemberStats: Codable, Equatable {
     let totalCustomers: Int
     let activeCustomers: Int
     let expiredCustomers: Int
@@ -170,13 +183,24 @@ struct MemberStats: Codable {
     var checkinsThisMonth: Int { 0 }
 }
 
-struct MemberIndividualStats: Codable {
+struct MemberIndividualStats: Codable, Equatable {
     let totalCheckins: Int
     let checkinsThisMonth: Int
-    let checkinsThisWeek: Int
-    let currentStreak: Int
-    let averagePerWeek: Double
-    let lastCheckin: Date?
+    let totalHours: Int
+    let averageVisitDuration: Int // in minutes
+    let mostActiveDay: String
+    let favoriteLocation: String?
+    let longestStreak: Int // consecutive days
+    let totalCreditsUsed: Int
+    
+    // Computed properties for convenience
+    var checkinsPerWeek: Double {
+        return Double(totalCheckins) / 52.0 // Rough average per week
+    }
+    
+    var hoursPerMonth: Double {
+        return Double(totalHours) / 12.0 // Average hours per month
+    }
 }
 
 // MARK: - Extensions

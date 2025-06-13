@@ -162,6 +162,186 @@ async function main() {
   });
   console.log(`Created customer: ${customer2.email}`);
 
+  // Create more customers for testing
+  const customer3 = await prisma.customer.create({
+    data: {
+      email: 'sarah.wilson@example.com',
+      firstName: 'Sarah',
+      lastName: 'Wilson',
+      phone: '+1-555-3001',
+      dateOfBirth: new Date('1992-03-15'),
+      address: '456 Health Street',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94103',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer4 = await prisma.customer.create({
+    data: {
+      email: 'mike.taylor@example.com',
+      firstName: 'Mike',
+      lastName: 'Taylor',
+      phone: '+1-555-3002',
+      dateOfBirth: new Date('1988-11-22'),
+      address: '789 Gym Boulevard',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94104',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer5 = await prisma.customer.create({
+    data: {
+      email: 'emma.brown@example.com',
+      firstName: 'Emma',
+      lastName: 'Brown',
+      phone: '+1-555-3003',
+      dateOfBirth: new Date('1995-07-08'),
+      address: '321 Wellness Way',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94105',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer6 = await prisma.customer.create({
+    data: {
+      email: 'david.clark@example.com',
+      firstName: 'David',
+      lastName: 'Clark',
+      phone: '+1-555-3004',
+      dateOfBirth: new Date('1987-12-03'),
+      address: '654 Fitness Road',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94106',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer7 = await prisma.customer.create({
+    data: {
+      email: 'lisa.martinez@example.com',
+      firstName: 'Lisa',
+      lastName: 'Martinez',
+      phone: '+1-555-3005',
+      dateOfBirth: new Date('1993-09-17'),
+      address: '987 Active Lane',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94107',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer8 = await prisma.customer.create({
+    data: {
+      email: 'james.anderson@example.com',
+      firstName: 'James',
+      lastName: 'Anderson',
+      phone: '+1-555-3006',
+      dateOfBirth: new Date('1991-04-25'),
+      address: '147 Strength Street',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94108',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer9 = await prisma.customer.create({
+    data: {
+      email: 'anna.garcia@example.com',
+      firstName: 'Anna',
+      lastName: 'Garcia',
+      phone: '+1-555-3007',
+      dateOfBirth: new Date('1990-06-12'),
+      address: '258 Power Place',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94109',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  const customer10 = await prisma.customer.create({
+    data: {
+      email: 'ryan.thomas@example.com',
+      firstName: 'Ryan',
+      lastName: 'Thomas',
+      phone: '+1-555-3008',
+      dateOfBirth: new Date('1989-01-30'),
+      address: '369 Energy Avenue',
+      city: 'San Francisco',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '94110',
+      clubId: fitnessClub.id,
+    },
+  });
+
+  // Yoga studio customers
+  const customer11 = await prisma.customer.create({
+    data: {
+      email: 'sophia.lee@example.com',
+      firstName: 'Sophia',
+      lastName: 'Lee',
+      phone: '+1-555-4001',
+      dateOfBirth: new Date('1994-05-18'),
+      address: '741 Zen Circle',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '90212',
+      clubId: yogaStudio.id,
+    },
+  });
+
+  const customer12 = await prisma.customer.create({
+    data: {
+      email: 'alex.white@example.com',
+      firstName: 'Alex',
+      lastName: 'White',
+      phone: '+1-555-4002',
+      dateOfBirth: new Date('1986-10-07'),
+      address: '852 Mindful Street',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '90213',
+      clubId: yogaStudio.id,
+    },
+  });
+
+  const customer13 = await prisma.customer.create({
+    data: {
+      email: 'olivia.hall@example.com',
+      firstName: 'Olivia',
+      lastName: 'Hall',
+      phone: '+1-555-4003',
+      dateOfBirth: new Date('1992-02-14'),
+      address: '963 Balance Boulevard',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'USA',
+      postalCode: '90214',
+      clubId: yogaStudio.id,
+    },
+  });
+
+  console.log('Created 13 total customers for testing');
+
   // Create subscription packages
   const monthlyFitnessPackage = await prisma.subscriptionPackage.create({
     data: {
@@ -307,6 +487,89 @@ async function main() {
     },
   });
   console.log(`Created QR code: ${qrCode2.code}`);
+
+  // Create subscriptions and QR codes for additional members
+  const members = [customer3, customer4, customer5, customer6, customer7, customer8, customer9, customer10];
+  const packages = [monthlyFitnessPackage, yearlyFitnessPackage];
+  
+  for (let i = 0; i < members.length; i++) {
+    const member = members[i];
+    const selectedPackage = packages[i % packages.length];
+    
+    // Create subscription
+    const subscription = await prisma.subscription.create({
+      data: {
+        name: `${selectedPackage.name} - ${member.firstName}`,
+        type: selectedPackage.type,
+        status: i < 6 ? 'ACTIVE' : (i === 6 ? 'EXPIRED' : 'CANCELED'),
+        originalPrice: selectedPackage.price,
+        finalPrice: selectedPackage.discountPrice || selectedPackage.price,
+        duration: selectedPackage.duration,
+        maxCheckins: selectedPackage.maxCheckins,
+        usedCheckins: Math.floor(Math.random() * (selectedPackage.maxCheckins || 30)),
+        startDate: new Date(Date.now() - (i * 7 * 24 * 60 * 60 * 1000)), // Staggered start dates
+        endDate: new Date(Date.now() + (selectedPackage.duration - i * 7) * 24 * 60 * 60 * 1000),
+        paymentStatus: 'COMPLETED',
+        customerId: member.id,
+        packageId: selectedPackage.id,
+        clubId: fitnessClub.id,
+      },
+    });
+
+    // Create QR code
+    const qrCode = await prisma.qRCode.create({
+      data: {
+        code: `QR-${member.id}-${subscription.id}`,
+        clubId: fitnessClub.id,
+        customerId: member.id,
+        subscriptionId: subscription.id,
+        expiresAt: subscription.endDate,
+        usageCount: Math.floor(Math.random() * 20),
+        lastUsedAt: i < 5 ? new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) : null,
+      },
+    });
+    
+    console.log(`Created subscription and QR code for ${member.firstName} ${member.lastName}`);
+  }
+
+  // Create subscriptions for yoga studio members
+  const yogaMembers = [customer11, customer12, customer13];
+  for (let i = 0; i < yogaMembers.length; i++) {
+    const member = yogaMembers[i];
+    
+    const subscription = await prisma.subscription.create({
+      data: {
+        name: `${monthlyYogaPackage.name} - ${member.firstName}`,
+        type: monthlyYogaPackage.type,
+        status: 'ACTIVE',
+        originalPrice: monthlyYogaPackage.price,
+        finalPrice: monthlyYogaPackage.price,
+        duration: monthlyYogaPackage.duration,
+        maxCheckins: monthlyYogaPackage.maxCheckins,
+        usedCheckins: Math.floor(Math.random() * 15),
+        startDate: new Date(Date.now() - (i * 5 * 24 * 60 * 60 * 1000)),
+        endDate: new Date(Date.now() + (30 - i * 5) * 24 * 60 * 60 * 1000),
+        paymentStatus: 'COMPLETED',
+        customerId: member.id,
+        packageId: monthlyYogaPackage.id,
+        clubId: yogaStudio.id,
+      },
+    });
+
+    const qrCode = await prisma.qRCode.create({
+      data: {
+        code: `QR-${member.id}-${subscription.id}`,
+        clubId: yogaStudio.id,
+        customerId: member.id,
+        subscriptionId: subscription.id,
+        expiresAt: subscription.endDate,
+        usageCount: Math.floor(Math.random() * 15),
+        lastUsedAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000),
+      },
+    });
+    
+    console.log(`Created yoga subscription and QR code for ${member.firstName} ${member.lastName}`);
+  }
 
   // Create check-in logs
   const checkinLog1 = await prisma.checkinLog.create({
