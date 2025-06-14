@@ -1,4 +1,9 @@
-# GraphQL Schema for QR Check-in System
+# GraphQL Schema for QR Check-in System - Backend Compatible
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
 
 type User {
   id: ID!
@@ -8,6 +13,18 @@ type User {
   lastName: String!
   role: Role!
   isActive: Boolean!
+  clubId: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Club {
+  id: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type Event {
@@ -17,42 +34,103 @@ type Event {
   startTime: String!
   endTime: String!
   location: String
-  maxCapacity: Int
+  maxCapacity: Float
   isActive: Boolean!
   clubId: ID!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type CheckinLog {
   id: ID!
   type: CheckinType!
-  timestamp: String!
+  action: String!
+  timestamp: DateTime!
   location: String
   notes: String
   userId: ID!
   eventId: ID!
-  subscriptionId: ID!
-  qrCodeId: ID!
-  user: User
-  event: Event
+  user: User!
+  event: Event!
 }
 
 type QRCode {
   id: ID!
-  code: String!
+  qrCode: String!
   isActive: Boolean!
-  userId: ID!
-  subscriptionId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  expiresAt: DateTime
+}
+
+type Customer {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  phone: String
+  address: String
+  city: String
+  state: String
+  postalCode: String
+  country: String
+  dateOfBirth: DateTime
+  gender: String
+  isActive: Boolean!
+  marketingOptIn: Boolean!
+  emergencyContactName: String
+  emergencyContactPhone: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Subscription {
+  id: ID!
+  name: String!
+  type: SubscriptionType!
+  price: Float!
+  duration: Int!
+  maxCheckins: Int
+  startDate: DateTime!
+  endDate: DateTime!
+  isActive: Boolean!
+  customerId: ID!
+  clubId: ID!
+  customer: Customer!
+  club: Club!
+  package: SubscriptionPackage
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SubscriptionPackage {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  discountPrice: Float
+  duration: Int!
+  maxCheckins: Int
+  features: [String!]!
+  isPopular: Boolean!
+  sortOrder: Int!
+  type: SubscriptionType!
+  isActive: Boolean!
+  club: Club!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type AuthResponse {
-  accessToken: String!
+  access_token: String!
   user: User!
 }
 
 enum Role {
-  ADMIN
-  STAFF
-  USER
+  SYSTEM_ADMIN
+  CLUB_ADMIN
+  CLUB_STAFF
+  CUSTOMER
 }
 
 enum CheckinType {
@@ -60,16 +138,141 @@ enum CheckinType {
   CHECKOUT
 }
 
+enum SubscriptionType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  EVENT_SPECIFIC
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+  username: String!
+}
+
+input CreateEventInput {
+  name: String!
+  description: String
+  startTime: String!
+  endTime: String!
+  location: String
+  maxCapacity: Float
+  clubId: ID!
+}
+
+input UpdateEventInput {
+  name: String
+  description: String
+  startTime: String
+  endTime: String
+  location: String
+  maxCapacity: Float
+  clubId: ID
+  isActive: Boolean
+}
+
 type Query {
-  me: User
-  events: [Event!]!
-  checkinLogs(userId: ID, eventId: ID): [CheckinLog!]!
+  # User queries
+  me: User!
+  profile: User!
+  user(id: ID!): User!
+  users: [User!]!
+  
+  # Club queries
+  club(id: ID!): Club!
+  clubs: [Club!]!
+  
+  # Event queries
+  events: String!
+  event(id: String!): String!
+  
+  # Customer queries
+  customers(limit: Int = 50, offset: Int = 0, search: String, status: String): String!
+  customer(id: String!): String!
+  customerStats: String!
+  
+  # Subscription queries
+  subscription(id: ID!): Subscription!
+  userSubscriptions(userId: ID): String!
+  subscriptionPackage(id: String!): String!
+  subscriptionPackagesByClub(clubId: String!, includeInactive: Boolean): String!
+  allSubscriptionPackages(includeInactive: Boolean): String!
+  popularSubscriptionPackages(limit: Float): String!
+  
+  # Check-in queries
+  checkinLogs(clubId: String, customerId: String, eventId: String, limit: Int, offset: Int): [CheckinLog!]!
+  userCheckinLogs(userId: ID, limit: Int, offset: Int): [CheckinLog!]!
 }
 
 type Mutation {
-  login(email: String!, password: String!): AuthResponse!
+  # Authentication
+  login(input: LoginInput!): AuthResponse!
   logout: String!
-  checkin(qrCodeId: ID!, eventId: ID!): CheckinLog!
-  checkout(qrCodeId: ID!, eventId: ID!): CheckinLog!
-  scanQRCode(code: String!): QRCode!
+  register(input: RegisterInput!): User!
+  
+  # Check-in operations
+  checkin(qrCodeId: String!, eventId: String!): CheckinLog!
+  checkout(qrCodeId: String!, eventId: String!): CheckinLog!
+  
+  # QR Code operations
+  generateQRCode(subscriptionId: ID!): String!
+  generateUserQRCode(userId: ID!): QRCode!
+  
+  # Event management
+  createEvent(input: CreateEventInput!): String!
+  updateEvent(id: String!, input: UpdateEventInput!): String!
+  deleteEvent(id: String!): String!
+  removeEvent(id: String!): String!
+  reactivateEvent(id: String!): String!
+  
+  # Club management
+  createClub(name: String!, description: String, contactEmail: String!, subdomain: String!): Club!
+  updateClub(id: ID!, name: String, description: String, isActive: Boolean): Club!
+  removeClub(id: ID!): Club!
+  
+  # Subscription management
+  createSubscription(clubId: ID!, name: String!, type: String!, price: Float!, duration: Float!, packageId: ID): Subscription!
+  createSubscriptionFromPackage(packageId: ID!, userId: ID!): String!
+  reactivateSubscription(id: ID!): String!
+  cancelSubscription(id: ID!): String!
+  
+  # Subscription package management
+  createSubscriptionPackage(
+    clubId: String!,
+    name: String!,
+    description: String,
+    price: Float!,
+    discountPrice: Float,
+    duration: Float!,
+    maxCheckins: Float,
+    features: [String!],
+    isPopular: Boolean,
+    sortOrder: Float,
+    type: String!
+  ): String!
+  updateSubscriptionPackage(
+    id: String!,
+    name: String,
+    description: String,
+    price: Float,
+    discountPrice: Float,
+    duration: Float,
+    maxCheckins: Float,
+    features: [String!],
+    isActive: Boolean,
+    isPopular: Boolean,
+    sortOrder: Float,
+    type: String
+  ): String!
+  deleteSubscriptionPackage(id: String!): String!
+  toggleSubscriptionPackageStatus(id: String!): String!
 }

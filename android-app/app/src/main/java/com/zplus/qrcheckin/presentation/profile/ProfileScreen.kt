@@ -16,14 +16,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zplus.qrcheckin.domain.model.User
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.zplus.qrcheckin.presentation.auth.AuthViewModel
 
 @Composable
 fun ProfileScreen(
-    user: User?,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    val authUiState by authViewModel.uiState.collectAsState()
+    val user = authUiState.user
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -152,24 +156,35 @@ fun ProfileScreen(
             
             // Logout Button
             Button(
-                onClick = onLogout,
+                onClick = {
+                    authViewModel.logout()
+                    onLogout()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFDC2626)
                 ),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = !authUiState.isLoading
             ) {
-                Icon(
-                    Icons.Default.ExitToApp,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    "Logout",
-                    modifier = Modifier.padding(start = 8.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                if (authUiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        "Logout",
+                        modifier = Modifier.padding(start = 8.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
             
         } else {

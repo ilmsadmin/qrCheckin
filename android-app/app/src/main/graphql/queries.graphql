@@ -1,28 +1,48 @@
 query GetEvents {
-  events {
-    id
-    name
-    description
-    startTime
-    endTime
-    location
-    maxCapacity
-    isActive
-    clubId
-  }
+  events
 }
 
-query GetCheckinLogs($userId: ID, $eventId: ID) {
-  checkinLogs(userId: $userId, eventId: $eventId) {
+query GetEvent($id: String!) {
+  event(id: $id)
+}
+
+query GetCheckinLogs($clubId: String, $customerId: String, $eventId: String, $limit: Int, $offset: Int) {
+  checkinLogs(clubId: $clubId, customerId: $customerId, eventId: $eventId, limit: $limit, offset: $offset) {
     id
     type
+    action
     timestamp
     location
     notes
     userId
     eventId
-    subscriptionId
-    qrCodeId
+    user {
+      id
+      firstName
+      lastName
+      email
+      username
+    }
+    event {
+      id
+      name
+      location
+      startTime
+      endTime
+    }
+  }
+}
+
+query GetUserCheckinLogs($userId: ID, $limit: Int, $offset: Int) {
+  userCheckinLogs(userId: $userId, limit: $limit, offset: $offset) {
+    id
+    type
+    action
+    timestamp
+    location
+    notes
+    userId
+    eventId
     user {
       id
       firstName
@@ -46,5 +66,61 @@ query GetCurrentUser {
     lastName
     role
     isActive
+    clubId
+    createdAt
+    updatedAt
   }
+}
+
+query GetProfile {
+  profile {
+    id
+    email
+    username
+    firstName
+    lastName
+    role
+    isActive
+    clubId
+    createdAt
+    updatedAt
+  }
+}
+
+query GetClubs {
+  clubs {
+    id
+    name
+    description
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+query GetClub($id: ID!) {
+  club(id: $id) {
+    id
+    name
+    description
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+query GetCustomers($limit: Int, $offset: Int, $search: String, $status: String) {
+  customers(limit: $limit, offset: $offset, search: $search, status: $status)
+}
+
+query GetCustomer($id: String!) {
+  customer(id: $id)
+}
+
+query GetUserSubscriptions($userId: ID) {
+  userSubscriptions(userId: $userId)
+}
+
+query GetSubscriptionPackagesByClub($clubId: String!, $includeInactive: Boolean) {
+  subscriptionPackagesByClub(clubId: $clubId, includeInactive: $includeInactive)
 }

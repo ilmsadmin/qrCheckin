@@ -5,18 +5,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.zplus.qrcheckin.domain.model.CheckinLog
 import com.zplus.qrcheckin.domain.model.CheckinType
 import java.text.SimpleDateFormat
@@ -25,10 +24,62 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsScreen(
-    logs: List<CheckinLog>,
-    onRefresh: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: LogsViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF111827))
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Check-in Logs",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+package com.zplus.qrcheckin.presentation.logs
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.zplus.qrcheckin.domain.model.CheckinLog
+import com.zplus.qrcheckin.domain.model.CheckinType
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LogsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: LogsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -51,13 +102,21 @@ fun LogsScreen(
             )
             
             IconButton(
-                onClick = onRefresh
+                onClick = { viewModel.refresh() },
+                enabled = !uiState.isLoading
             ) {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = "Refresh",
-                    tint = Color(0xFF60A5FA)
-                )
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color(0xFF60A5FA)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        tint = Color(0xFF60A5FA)
+                    )
+                }
             }
         }
         
@@ -70,10 +129,7 @@ fun LogsScreen(
         ) {
             SummaryCard(
                 title = "Today's Check-ins",
-                value = logs.count { 
-                    it.type == CheckinType.CHECKIN && 
-                    isToday(it.timestamp)
-                }.toString(),
+                value = uiState.todayCheckins.toString(),
                 icon = Icons.Default.Login,
                 color = Color(0xFF10B981),
                 modifier = Modifier.weight(1f)
@@ -81,15 +137,33 @@ fun LogsScreen(
             
             SummaryCard(
                 title = "Currently In",
-                value = calculateCurrentlyIn(logs).toString(),
+                value = uiState.currentlyIn.toString(),
                 icon = Icons.Default.People,
                 color = Color(0xFF3B82F6),
                 modifier = Modifier.weight(1f)
             )
         }
         
+        // Error State
+        uiState.error?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFEF4444)
+                )
+            ) {
+                Text(
+                    text = error,
+                    color = Color.White,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+        
         // Logs List
-        if (logs.isEmpty()) {
+        if (uiState.logs.isEmpty() && !uiState.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -115,7 +189,7 @@ fun LogsScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(logs) { log ->
+                items(uiState.logs) { log ->
                     LogItem(log = log)
                 }
             }
@@ -148,6 +222,105 @@ private fun SummaryCard(
                 tint = color,
                 modifier = Modifier.size(32.dp)
             )
+            
+            Text(
+                value,
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            
+            Text(
+                title,
+                color = Color(0xFF9CA3AF),
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun LogItem(log: CheckinLog) {
+    val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1F2937)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            if (log.type == CheckinType.CHECKIN) Color(0xFF10B981) else Color(0xFFEF4444),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (log.type == CheckinType.CHECKIN) Icons.Default.Login else Icons.Default.Logout,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column {
+                    Text(
+                        text = log.user?.let { "${it.firstName} ${it.lastName}" } ?: "Unknown User",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = log.event?.name ?: "Unknown Event",
+                        color = Color(0xFF9CA3AF),
+                        fontSize = 14.sp
+                    )
+                    log.location?.let { location ->
+                        Text(
+                            text = location,
+                            color = Color(0xFF6B7280),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+            
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = dateFormat.format(log.timestamp),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = log.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    color = if (log.type == CheckinType.CHECKIN) Color(0xFF10B981) else Color(0xFFEF4444),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
             Text(
                 value,
                 color = Color.White,

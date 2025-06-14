@@ -1,6 +1,10 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
+    id("dagger.hilt.android.plugin")
+    id("com.apollographql.apollo3")
+    id("kotlinx-serialization")
 }
 
 android {
@@ -49,6 +53,12 @@ android {
     }
 }
 
+apollo {
+    service("service") {
+        packageName.set("com.zplus.qrcheckin.graphql")
+    }
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -65,6 +75,44 @@ dependencies {
     
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    
+    // Hilt DI
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    
+    // Room Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+    
+    // Network
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    
+    // Apollo GraphQL
+    implementation(libs.apollo.runtime)
+    
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    
+    // ML Kit for QR scanning
+    implementation(libs.mlkit.barcode.scanning)
+    
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+    
+    // Accompanist
+    implementation(libs.accompanist.permissions)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

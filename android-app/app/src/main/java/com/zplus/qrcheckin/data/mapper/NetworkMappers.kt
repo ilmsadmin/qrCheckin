@@ -13,7 +13,17 @@ fun UserDto.toDomain(): User = User(
     username = username,
     firstName = firstName,
     lastName = lastName,
-    role = Role.valueOf(role),
+    role = try {
+        when (role.uppercase()) {
+            "SYSTEM_ADMIN" -> Role.SYSTEM_ADMIN
+            "CLUB_ADMIN" -> Role.CLUB_ADMIN
+            "CLUB_STAFF" -> Role.CLUB_STAFF
+            "CUSTOMER" -> Role.CUSTOMER
+            else -> Role.CUSTOMER
+        }
+    } catch (e: Exception) {
+        Role.CUSTOMER
+    },
     isActive = isActive
 )
 
@@ -21,32 +31,44 @@ fun EventDto.toDomain(): Event = Event(
     id = id,
     name = name,
     description = description,
-    startTime = dateFormat.parse(startTime) ?: Date(),
-    endTime = dateFormat.parse(endTime) ?: Date(),
+    startTime = startTime?.let { 
+        try { dateFormat.parse(it) } catch (e: Exception) { Date() }
+    } ?: Date(),
+    endTime = endTime?.let { 
+        try { dateFormat.parse(it) } catch (e: Exception) { Date() }
+    } ?: Date(),
     location = location,
-    maxCapacity = maxCapacity,
-    isActive = isActive,
-    clubId = clubId
+    maxCapacity = maxCapacity?.toInt() ?: 0,
+    isActive = isActive ?: true,
+    clubId = clubId ?: ""
 )
 
 fun CheckinLogDto.toDomain(): CheckinLog = CheckinLog(
     id = id,
-    type = CheckinType.valueOf(type),
-    timestamp = dateFormat.parse(timestamp) ?: Date(),
+    type = try {
+        CheckinType.valueOf(type.uppercase())
+    } catch (e: Exception) {
+        CheckinType.CHECKIN
+    },
+    timestamp = try { 
+        dateFormat.parse(timestamp) 
+    } catch (e: Exception) { 
+        Date() 
+    } ?: Date(),
     location = location,
     notes = notes,
     userId = userId,
     eventId = eventId,
-    subscriptionId = subscriptionId,
-    qrCodeId = qrCodeId,
+    subscriptionId = "", // Not available in new API
+    qrCodeId = "", // Not available in new API
     user = user?.toDomain(),
     event = event?.toDomain()
 )
 
 fun QRCodeDto.toDomain(): QRCode = QRCode(
     id = id,
-    code = code,
+    code = qrCode,
     isActive = isActive,
-    userId = userId,
-    subscriptionId = subscriptionId
+    userId = "", // Not available in new API structure
+    subscriptionId = "" // Not available in new API structure
 )

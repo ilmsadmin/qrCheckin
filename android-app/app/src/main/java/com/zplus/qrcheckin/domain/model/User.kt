@@ -11,7 +11,8 @@ data class User(
 )
 
 enum class Role {
-    ADMIN,
-    STAFF,
-    USER
+    SYSTEM_ADMIN,
+    CLUB_ADMIN,
+    CLUB_STAFF,
+    CUSTOMER
 }
