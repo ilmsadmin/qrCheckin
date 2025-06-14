@@ -147,3 +147,30 @@ export const GET_ALL_CHECKIN_LOGS = gql`
     }
   }
 `;
+
+// Create system user (admin only)
+export const CREATE_SYSTEM_USER = gql`
+  mutation CreateSystemUser($input: CreateUserInput!) {
+    createSystemUser(input: $input) {
+      id
+      email
+      username
+      firstName
+      lastName
+      role
+      isActive
+      createdAt
+    }
+  }
+`;
+
+// Update user role (admin only)
+export const UPDATE_USER_ROLE = gql`
+  mutation UpdateUserRole($userId: ID!, $role: UserRole!, $clubId: ID) {
+    updateUserRole(userId: $userId, role: $role, clubId: $clubId) {
+      id
+      role
+      updatedAt
+    }
+  }
+`;
