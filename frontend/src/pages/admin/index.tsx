@@ -176,6 +176,30 @@ export default function AdminDashboard() {
                   <i className="fas fa-clipboard-list mr-2"></i>View Logs
                 </Link>
               </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Revenue Management</h3>
+                <p className="text-sm text-gray-600 mb-4">Platform-wide billing and revenue analytics</p>
+                <Link href="/admin/revenue" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 inline-block">
+                  <i className="fas fa-dollar-sign mr-2"></i>Manage Revenue
+                </Link>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Technical Monitoring</h3>
+                <p className="text-sm text-gray-600 mb-4">System health and performance monitoring</p>
+                <Link href="/admin/monitoring" className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 inline-block">
+                  <i className="fas fa-chart-line mr-2"></i>System Health
+                </Link>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Club Onboarding</h3>
+                <p className="text-sm text-gray-600 mb-4">Review and manage club onboarding requests</p>
+                <Link href="/admin/onboarding" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 inline-block">
+                  <i className="fas fa-building-user mr-2"></i>Onboarding
+                </Link>
+              </div>
             </div>
 
               {/* Recent Activity */}

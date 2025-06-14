@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import QRCode from 'react-qr-code';
-import { GET_USERS, ACTIVATE_USER, DEACTIVATE_USER, GENERATE_USER_QR_CODE } from '../../lib/graphql/users';
+import { GET_USERS, ACTIVATE_USER, DEACTIVATE_USER, GENERATE_USER_QR_CODE, CREATE_SYSTEM_USER, UPDATE_USER_ROLE } from '../../lib/graphql/users';
+import { GET_CLUBS } from '../../lib/graphql/dashboard';
 import Navigation from '../../components/Navigation';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import ErrorHandler from '../../components/ErrorHandler';
@@ -20,15 +21,39 @@ interface User {
   updatedAt: string;
 }
 
+interface Club {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const [qrCodeModal, setQrCodeModal] = useState<{ show: boolean; userId?: string; qrCode?: string }>({ show: false });
+  const [formData, setFormData] = useState({
+    email: '',
+    username: '',
+    firstName: '',
+    lastName: '',
+    password: '',
+    role: 'CLUB_STAFF',
+    clubId: ''
+  });
+  const [roleFormData, setRoleFormData] = useState({
+    role: '',
+    clubId: ''
+  });
 
   // Query to get all users
   const { data, loading, error, refetch } = useQuery(GET_USERS, {
     errorPolicy: 'all'
   });
+
+  // Query to get clubs for user creation
+  const { data: clubsData } = useQuery(GET_CLUBS);
 
   // Mutations
   const [activateUser] = useMutation(ACTIVATE_USER, {
@@ -52,7 +77,33 @@ export default function AdminUsers() {
     onError: (error) => console.error('Error generating QR code:', error)
   });
 
+  const [createSystemUser, { loading: createLoading }] = useMutation(CREATE_SYSTEM_USER, {
+    onCompleted: () => {
+      refetch();
+      setShowCreateModal(false);
+      resetForm();
+      alert('User created successfully!');
+    },
+    onError: (error) => {
+      console.error('Error creating user:', error);
+      alert('Failed to create user. Please try again.');
+    }
+  });
+
+  const [updateUserRole, { loading: updateRoleLoading }] = useMutation(UPDATE_USER_ROLE, {
+    onCompleted: () => {
+      refetch();
+      setShowRoleModal(false);
+      alert('User role updated successfully!');
+    },
+    onError: (error) => {
+      console.error('Error updating user role:', error);
+      alert('Failed to update user role. Please try again.');
+    }
+  });
+
   const users = data?.users || [];
+  const clubs: Club[] = clubsData?.clubs || [];
 
   const handleToggleUserStatus = async (user: User) => {
     try {
@@ -76,15 +127,78 @@ export default function AdminUsers() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role.toLowerCase()) {
-      case 'admin':
+      case 'system_admin':
+        return 'bg-purple-100 text-purple-800';
+      case 'club_admin':
         return 'bg-red-100 text-red-800';
-      case 'staff':
+      case 'club_staff':
         return 'bg-blue-100 text-blue-800';
-      case 'user':
+      case 'customer':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      username: '',
+      firstName: '',
+      lastName: '',
+      password: '',
+      role: 'CLUB_STAFF',
+      clubId: ''
+    });
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await createSystemUser({
+        variables: {
+          input: {
+            email: formData.email,
+            username: formData.username,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            password: formData.password,
+            role: formData.role,
+            clubId: formData.clubId || null
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
+
+  const handleRoleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedUser) return;
+
+    try {
+      await updateUserRole({
+        variables: {
+          userId: selectedUser.id,
+          role: roleFormData.role,
+          clubId: roleFormData.clubId || null
+        }
+      });
+    } catch (error) {
+      console.error('Error updating user role:', error);
+    }
+  };
+
+  const openRoleModal = (user: User) => {
+    setSelectedUser(user);
+    setRoleFormData({
+      role: user.role,
+      clubId: ''
+    });
+    setShowRoleModal(true);
   };
 
   if (loading) {
@@ -121,7 +235,7 @@ export default function AdminUsers() {
                   Manage system users, roles, and permissions
                 </p>
               </div>
-              <div className="mt-4 flex md:mt-0 md:ml-4">
+              <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
                 <Link 
                   href="/admin" 
                   className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -129,6 +243,13 @@ export default function AdminUsers() {
                   <i className="fas fa-arrow-left mr-2"></i>
                   Back to Dashboard
                 </Link>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  <i className="fas fa-user-plus mr-2"></i>
+                  Create User
+                </button>
               </div>
             </div>
 
@@ -185,9 +306,9 @@ export default function AdminUsers() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Admins</dt>
+                        <dt className="text-sm font-medium text-gray-500 truncate">System Admins</dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {users.filter((user: User) => user.role === 'ADMIN').length}
+                          {users.filter((user: User) => user.role === 'SYSTEM_ADMIN').length}
                         </dd>
                       </dl>
                     </div>
@@ -203,9 +324,27 @@ export default function AdminUsers() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Staff</dt>
+                        <dt className="text-sm font-medium text-gray-500 truncate">Club Admins</dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {users.filter((user: User) => user.role === 'STAFF').length}
+                          {users.filter((user: User) => user.role === 'CLUB_ADMIN').length}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <i className="fas fa-users text-blue-600 text-2xl"></i>
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">Club Staff</dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {users.filter((user: User) => user.role === 'CLUB_STAFF').length}
                         </dd>
                       </dl>
                     </div>
@@ -304,6 +443,13 @@ export default function AdminUsers() {
                                 title={user.isActive ? 'Deactivate User' : 'Activate User'}
                               >
                                 <i className={`fas ${user.isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
+                              </button>
+                              <button
+                                onClick={() => openRoleModal(user)}
+                                className="text-indigo-600 hover:text-indigo-900"
+                                title="Change Role"
+                              >
+                                <i className="fas fa-user-cog"></i>
                               </button>
                               <Link 
                                 href={`/admin/users/${user.id}/logs`}
@@ -436,6 +582,215 @@ export default function AdminUsers() {
                       Close
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create User Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Create New User</h3>
+                    <button
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        resetForm();
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handleCreateUser}>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                      <input
+                        type="password"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                        <select
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          value={formData.role}
+                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                        >
+                          <option value="SYSTEM_ADMIN">System Admin</option>
+                          <option value="CLUB_ADMIN">Club Admin</option>
+                          <option value="CLUB_STAFF">Club Staff</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Club</label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          value={formData.clubId}
+                          onChange={(e) => setFormData({ ...formData, clubId: e.target.value })}
+                          disabled={formData.role === 'SYSTEM_ADMIN'}
+                        >
+                          <option value="">Select a club</option>
+                          {clubs.filter(club => club.isActive).map((club) => (
+                            <option key={club.id} value={club.id}>
+                              {club.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateModal(false);
+                          resetForm();
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={createLoading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {createLoading ? 'Creating...' : 'Create User'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Role Update Modal */}
+          {showRoleModal && selectedUser && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-[400px] shadow-lg rounded-md bg-white">
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Change User Role</h3>
+                    <button
+                      onClick={() => setShowRoleModal(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">
+                      Changing role for: <strong>{selectedUser.firstName} {selectedUser.lastName}</strong>
+                    </p>
+                    <p className="text-xs text-gray-500">Current role: {selectedUser.role}</p>
+                  </div>
+
+                  <form onSubmit={handleRoleUpdate}>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Role *</label>
+                      <select
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={roleFormData.role}
+                        onChange={(e) => setRoleFormData({ ...roleFormData, role: e.target.value })}
+                      >
+                        <option value="">Select new role</option>
+                        <option value="SYSTEM_ADMIN">System Admin</option>
+                        <option value="CLUB_ADMIN">Club Admin</option>
+                        <option value="CLUB_STAFF">Club Staff</option>
+                      </select>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Club</label>
+                      <select
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        value={roleFormData.clubId}
+                        onChange={(e) => setRoleFormData({ ...roleFormData, clubId: e.target.value })}
+                        disabled={roleFormData.role === 'SYSTEM_ADMIN'}
+                      >
+                        <option value="">Select a club</option>
+                        {clubs.filter(club => club.isActive).map((club) => (
+                          <option key={club.id} value={club.id}>
+                            {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowRoleModal(false)}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={updateRoleLoading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {updateRoleLoading ? 'Updating...' : 'Update Role'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

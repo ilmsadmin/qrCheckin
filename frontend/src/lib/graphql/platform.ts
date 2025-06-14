@@ -67,3 +67,40 @@ export const GET_ALL_CLUBS = gql`
     }
   }
 `;
+
+export const GET_PLATFORM_REVENUE = gql`
+  query GetPlatformRevenue($dateRange: DateRangeInput!, $groupBy: RevenueGroupBy) {
+    platformRevenue(dateRange: $dateRange, groupBy: $groupBy) {
+      period
+      revenue
+      count
+    }
+  }
+`;
+
+export const GET_REVENUE_ANALYTICS = gql`
+  query GetRevenueAnalytics($clubId: ID, $dateRange: DateRangeInput) {
+    revenueAnalytics(clubId: $clubId, dateRange: $dateRange) {
+      totalRevenue
+      monthlyRecurringRevenue
+      averageRevenuePerClub
+      byPeriod {
+        period
+        revenue
+        growth
+      }
+      byClub {
+        clubId
+        clubName
+        revenue
+        percentage
+      }
+      byPackage {
+        packageId
+        packageName
+        revenue
+        subscriptions
+      }
+    }
+  }
+`;
